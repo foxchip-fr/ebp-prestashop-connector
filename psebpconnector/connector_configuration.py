@@ -35,6 +35,6 @@ class ConnectorConfiguration:
         self.config = ConfigParser()
 
         try:
-            self.config .read(config_path)
+            self.config.read(config_path)
         except Error as e:
             raise ValueError(f"Error reading the configuration file: {e}")
