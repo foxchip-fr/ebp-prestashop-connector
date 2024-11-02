@@ -28,13 +28,30 @@ from pathlib import Path
 
 
 class ConnectorConfiguration:
+    _config: ConfigParser
+    url: str
+    apikey: str
+    ebp_executable_path: Path
+
     def __init__(self, config_path: Path):
+        self._read_configuration(config_path)
+        self.load_required_options()
+
+        if not self.ebp_executable_path.is_file():
+            raise FileNotFoundError(f"The file {self.ebp_executable_path} does not exists.")
+
+    def _read_configuration(self, config_path):
         if not config_path.is_file():
             raise FileNotFoundError(f"The file {config_path} does not exist.")
 
-        self.config = ConfigParser()
+        self._config = ConfigParser()
 
         try:
-            self.config.read(config_path)
+            self._config.read(config_path)
         except Error as e:
             raise ValueError(f"Error reading the configuration file: {e}")
+
+    def load_required_options(self):
+        for key in ['url', 'apikey', 'ebp_executable_path']:
+            setattr(self, key, self._config.get('main', key))
+        self.ebp_executable_path = Path(self.ebp_executable_path)

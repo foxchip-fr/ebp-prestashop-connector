@@ -26,6 +26,7 @@ SOFTWARE.
 import pytest
 
 
+from configparser import NoOptionError
 from pathlib import Path
 from psebpconnector.connector_configuration import ConnectorConfiguration
 
@@ -34,3 +35,14 @@ def test_configuration_with_bad_syntax():
     with pytest.raises(ValueError):
         ConnectorConfiguration(Path(__file__).parent / 'samples/config/config_file_with_bad_syntax.ini')
 
+
+def test_configuration_missing_keys():
+    with pytest.raises(NoOptionError):
+        ConnectorConfiguration(Path(__file__).parent / 'samples/config/config_file_with_missing_keys.ini')
+
+
+def test_configuration_valid_file():
+    c = ConnectorConfiguration(Path(__file__).parent / 'samples/config/config_file_ok.ini')
+    assert c.url
+    assert c.apikey
+    assert c.ebp_executable_path
