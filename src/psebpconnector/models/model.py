@@ -28,7 +28,6 @@ import inspect
 class Model:
     @classmethod
     def from_dict(cls, d):
-        print(d)
         return cls(**{
             k: v for k, v in d.items()
             if k in inspect.signature(cls).parameters
