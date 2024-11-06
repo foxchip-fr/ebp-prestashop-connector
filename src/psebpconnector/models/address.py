@@ -22,7 +22,32 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from .address import Address
-from .order import Order
-from .order_printed import OrderPrinted
-from .product import Product
+from psebpconnector.models.model import Model
+from dataclasses import dataclass
+from typing import Any, Optional
+
+
+class Address(Model):
+    id: int
+    id_customer: int = 0
+    id_manufacturer: int = 0
+    id_supplier: int = 0
+    id_warehouse: int = 0
+    id_country: int = 0
+    id_state: int = 0
+    alias: str = ''
+    company: str = ''
+    lastname: str = ''
+    firstname: str = ''
+    vat_number: int = 0
+    address1: str = ''
+    address2: str = ''
+    postcode: str = ''
+    city: str = ''
+    other: str = ''
+    phone: str = ''
+    phone_mobile: str = ''
+    dni: str = ''
+    deleted: int = 0
+    date_add: str = ''
+    date_upd: str = ''
