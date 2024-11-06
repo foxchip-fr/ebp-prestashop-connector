@@ -50,7 +50,8 @@ class Webservice:
             'Io-Format': 'JSON',
         }
 
-        self.test_api_authentication()
+        if not self.test_api_authentication():
+            raise ValueError("Unable to authenticate")
 
     def _build_credentials(self) -> HTTPBasicAuth:
         return HTTPBasicAuth(self.apikey, '')
@@ -116,4 +117,4 @@ class Webservice:
     def test_api_authentication(self) -> bool:
         s = Session()
         response = s.get(self._build_url(''), auth=self._build_credentials())
-        return response.status_code != 401
+        return response.status_code == 200
