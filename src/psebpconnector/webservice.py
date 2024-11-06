@@ -50,9 +50,6 @@ class Webservice:
             'Io-Format': 'JSON',
         }
 
-        if not self.test_api_authentication():
-            raise ValueError("Unable to authenticate")
-
     def _build_credentials(self) -> HTTPBasicAuth:
         return HTTPBasicAuth(self.apikey, '')
 

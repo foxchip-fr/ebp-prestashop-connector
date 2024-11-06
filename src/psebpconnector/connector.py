@@ -24,7 +24,6 @@ SOFTWARE.
 
 
 import csv
-from multiprocessing.managers import Value
 
 from psebpconnector.connector_configuration import ConnectorConfiguration
 from psebpconnector.webservice import Webservice
@@ -43,12 +42,35 @@ class Connector:
         """
         self.config = ConnectorConfiguration(config_path)
         self.webservice = Webservice(self.config.url, self.config.apikey)
+        self.payment_method_mapping = {}
         self.vat_mapping = {}
 
-        self.load_vat_mapping(self.config.vat_mapping_file_path)
+    def _check_territoriality_consistency(self):
+        for payment_method in self.payment_method_mapping:
+            for has_vat in self.payment_method_mapping[payment_method]:
+                territoriality = self.payment_method_mapping[payment_method][has_vat][2]
+                assert territoriality in self.vat_mapping, f"Territoriality '{territoriality}' not found in VAT mapping file"
 
-    def load_vat_mapping(self, vat_file_path: Path):
-        with open(vat_file_path, 'r') as f:
+    def check_consistency(self):
+        self._check_territoriality_consistency()
+
+    def load_payment_method_mapping(self):
+        with open(self.config.payment_method_mapping_file_path, 'r') as f:
+            reader = csv.reader(f, delimiter=';')
+            next(reader, None)  # Skip header
+
+            line_number = 2
+            for rows in reader:
+                if rows:
+                    if len(rows) != 5:
+                        raise ValueError(f"{self.config.payment_method_mapping_file_path.name}, l.{line_number}: expected 5 columns")
+                    payment_method, with_vat, client_code, currency, territoriality = rows
+                    with_vat = with_vat == 'AVEC'
+                    self.payment_method_mapping.setdefault(payment_method.strip(), {})
+                    self.payment_method_mapping[payment_method.strip()][with_vat] = (client_code.strip(), currency.strip(), territoriality.strip())
+
+    def load_vat_mapping(self):
+        with open(self.config.vat_mapping_file_path, 'r') as f:
             reader = csv.reader(f, delimiter=';')
             next(reader, None)  # Skip header
 
@@ -56,7 +78,7 @@ class Connector:
             for rows in reader:
                 if rows:
                     if len(rows) != 12:
-                        raise ValueError(f"{vat_file_path.name}, l.{line_number}: expected 12 columns")
+                        raise ValueError(f"{self.config.vat_mapping_file_path.name}, l.{line_number}: expected 12 columns")
                     territoriality, vat, ebp_id, ps_country_id = rows[0], rows[2], rows[10], int(rows[11])
                     self.vat_mapping.setdefault(territoriality, {})
 
@@ -65,3 +87,9 @@ class Connector:
 
                     self.vat_mapping[territoriality][ps_country_id] = (vat, ebp_id)
                 line_number += 1
+
+    def run(self):
+        self.load_payment_method_mapping()
+        self.load_vat_mapping()
+        self.check_consistency()
+        assert self.webservice.test_api_authentication(), "Unable to login"

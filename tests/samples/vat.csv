@@ -1,0 +1,88 @@
+Territorialité;Pays;Description;Taux de TVA;TVA VE D;TVA VE E;VE Biens;VE Services;VE Ports;Inactif;Par défaut pour la territorialité;Code;ps_country_id
+Assujetti établi hors de France;EXONERATION;0;44571;44571;707;706;708196;Décoché;Décoché;104b58f7-2cd1-452a-a4f8-b8d14f74a6fe;-1
+Assujetti établi hors de France;Luxembourg;17;445711032;445711032;707196232;706;708032;Décoché;Décoché;e5943441-e835-4135-81dd-489530e52e00;12
+Assujetti établi hors de France;Malte;18;445711044;445711044;707196244;706;708044;Décoché;Décoché;275ea1bf-2df1-40fa-a504-501d271c7951;251
+Assujetti établi hors de France;Roumanie;19;445711047;445711047;707196247;706;708047;Décoché;Décoché;07898812-7e75-4096-9796-066c406227a3;36
+Assujetti établi hors de France;Allemagne;19;445711019;445711019;70719;706;70819;Décoché;Décoché;379915f6-0acb-4cf0-8f72-a99f3df5051a;1
+Assujetti établi hors de France;Chypre;19;44571104;44571104;70719624;706;70804;Décoché;Décoché;28213b13-364b-4d13-a195-fb2ec2cbd6d7;76
+Assujetti établi hors de France;Slovaquie;20;445711049;445711049;707196249;706;708049;Décoché;Décoché;6df5bc82-991f-4c61-aa40-274ae48c8ff8;37
+Assujetti établi hors de France;EXPORT;20;44571102;44571102;707196;706;708197;Décoché;Coché;97fcac0b-082f-416f-be0f-5c71e752455b;-2
+Assujetti établi hors de France;UK;20;44571103;44571103;707196202;706;7081971;Décoché;Décoché;51373338-15af-40ea-8597-81066639cfc8;17
+Assujetti établi hors de France;Autriche;20;445711046;445711046;707196246;706;708046;Décoché;Décoché;ae071ed6-3796-4dc4-807e-94c98144c520;2
+Assujetti établi hors de France;Bulgarie;20;445711034;445711034;707196234;706;708034;Décoché;Décoché;b7eb56de-9173-49bb-bd03-d567be9e5cf8;248
+Assujetti établi hors de France;Belgique;21;445711031;445711031;707196231;706;708031;Décoché;Décoché;e01bb278-9618-411c-a31d-2cad5506d08b;3
+Assujetti établi hors de France;Lettonie;21;445711041;445711041;707196241;706;708041;Décoché;Décoché;bc8e8752-1884-4f44-8553-60cb334bca41;250
+Assujetti établi hors de France;Espagne;21;445711021;445711021;70719621;706;70821;Décoché;Décoché;985e48e2-6664-4c76-99d2-82ccbf113c14;6
+Assujetti établi hors de France;Pays-Bas;21;445711045;445711045;707196245;706;708045;Décoché;Décoché;7da67cd4-c200-4c2f-9da2-d5110cf5385a;13
+Assujetti établi hors de France;Lituanie;21;445711042;445711042;707196242;706;708042;Décoché;Décoché;a54b5e2e-b418-4a57-9dbe-e0f52ad980de;249
+Assujetti établi hors de France;Rep. Tcheque;21;4457110211;4457110211;707196211;706;708211;Décoché;Décoché;b96045bb-05e6-4fbb-b04c-f689e8c36b3b;16
+Assujetti établi hors de France;Slovénie;22;445711048;445711048;707196248;706;708048;Décoché;Décoché;c82a5f8b-653d-46a9-a910-2f848a906ccb;252
+Assujetti établi hors de France;Italie;22;445711022;445711022;70719622;706;70822;Décoché;Décoché;972eaba2-2a82-4a5f-9c88-75ed64c43ce0;10
+Assujetti établi hors de France;Estonie;22;445711036;445711036;707196236;706;708036;Décoché;Décoché;7f023cb4-36f2-4963-992b-c8d4a309cc67;86
+Assujetti établi hors de France;Irlande;23;445711039;445711039;707196239;706;708039;Décoché;Décoché;06de2fe6-0b51-4a66-a9a4-3a094e099076;-9999
+Assujetti établi hors de France;Pologne;23;4457110222;4457110222;707196222;706;708222;Décoché;Décoché;1ed428a4-352e-4994-9acf-7b7cec0d85cc;14
+Assujetti établi hors de France;Portugal;23;445711033;445711033;707196233;706;708033;Décoché;Décoché;8579a5c0-3c82-4dde-8f25-bfc115a6cecb;15
+Assujetti établi hors de France;Grèce;24;445711037;445711037;707196237;706;708037;Décoché;Décoché;39b52e96-8eab-480d-889f-e93bf46e006e;9
+Assujetti établi hors de France;Suède;25;445711051;445711051;707196251;706;708051;Décoché;Décoché;11bc52bc-0fa7-4a11-a142-2362a56dd823;18
+Assujetti établi hors de France;Danemark;25;445711035;445711035;707196235;706;708035;Décoché;Décoché;af198bca-78e9-4f02-ad30-36f22d375b6d;20
+Assujetti établi hors de France;Croatie;25;445711038;445711038;707196238;706;708038;Décoché;Décoché;1e159465-4177-42dc-b6c8-94374c1a0aff;74
+Assujetti établi hors de France;Finlande;25,5;44571105;44571105;70719625;706;70805;Décoché;Décoché;c9176c19-7fb9-4948-b576-53c3ed24b071;7
+Assujetti établi hors de France;Hongrie;27;445711043;445711043;707196243;706;708043;Décoché;Décoché;84ed5a89-59b2-49bc-9010-ccfdd70e22b1;143
+France;EXONERATION;0;;;707;706;708196;Décoché;Décoché;a1fdcd98-28a7-4b8d-8b6a-4d69445ca0b2;-1
+France;Luxembourg;17;445711032;445711032;707196232;706;708032;Décoché;Décoché;fa13bf2d-d407-4f46-96b3-16fb37769c9a;12
+France;Malte;18;445711044;445711044;707196244;706;708044;Décoché;Décoché;35a349a8-fe77-4f4d-acee-ef794b7019e7;251
+France;Roumanie;19;445711047;445711047;707196247;706;708047;Décoché;Décoché;dc61e8f2-ef20-4db5-96f3-23998ace1a8e;36
+France;Chypre;19;44571104;44571104;70719624;706;70804;Décoché;Décoché;abfd3062-beb0-4248-9246-392719529ccd;76
+France;Allemagne;19;445711019;445711019;70719;706;70819;Décoché;Décoché;7f4e3640-dd2f-4498-b70f-6bc79e32b9fd;1
+France;Bulgarie;20;445711034;445711034;707196234;706;708034;Décoché;Décoché;a77b323e-2a55-42d1-af6c-75242c5cae7c;248
+France;Slovaquie;20;445711049;445711049;707196249;706;708049;Décoché;Décoché;a512da8a-184e-4baf-8421-86b9b3211783;37
+France;Estonie;20;445711036;445711036;707196236;706;708036;Décoché;Décoché;9c279cad-0998-4282-8ac2-8bc693ec0863;86
+France;France;20;44571102;44571102;707;706;708197;Décoché;Coché;36cab0de-3e5b-4bee-a556-8eabb1673e76;8
+France;Autriche;20;445711046;445711046;707196246;706;708046;Décoché;Décoché;f4b6aed5-6018-4293-b868-c3dc411daab3;2
+France;UK;20;44571103;44571103;707196202;706;7081971;Décoché;Décoché;8e0c97e0-3ba2-41be-992b-dd3d956562da;17
+France;Lettonie;21;445711041;445711041;707196241;706;708041;Décoché;Décoché;cc7b8013-090f-4487-a1c1-38ec35cd444e;250
+France;Rep. Tcheque;21;4457110211;4457110211;707196211;706;708211;Décoché;Décoché;c274f3f3-2647-4dd2-aaa0-68102751007e;16
+France;Lituanie;21;445711042;445711042;707196242;706;708042;Décoché;Décoché;7d05d5e5-b880-4180-83c9-924ad5d61500;249
+France;Pays-Bas;21;445711045;445711045;707196245;706;708045;Décoché;Décoché;8ebba80f-9edd-4d65-a682-b2210494d98d;13
+France;Belgique;21;445711031;445711031;707196231;706;708031;Décoché;Décoché;f0da12a9-6b39-49c6-a3ad-f7de8dacc945;3
+France;Espagne;21;445711021;445711021;70719621;706;70821;Décoché;Décoché;865e133f-e6cd-4261-8286-ff029e2853a3;6
+France;Italie;22;445711022;445711022;70719622;706;70822;Décoché;Décoché;4d530c16-c2aa-469f-8b55-31d391553270;10
+France;Slovénie;22;445711048;445711048;707196248;706;708048;Décoché;Décoché;daec88b9-244c-4681-9f14-6d94e174fead;252
+France;Pologne;23;4457110222;4457110222;707196222;706;708222;Décoché;Décoché;24d9ce9f-c1ea-4867-91ed-bfe15649d28e;14
+France;Portugal;23;445711033;445711033;707196233;706;708033;Décoché;Décoché;6aaddb77-8a3b-40ae-9888-e1d32de82de0;15
+France;Irlande;23;445711039;445711039;707196239;706;708039;Décoché;Décoché;85e99a9b-ed8c-4167-9391-eef3a93fecea;-9999
+France;Grèce;24;445711037;445711037;707196237;706;708037;Décoché;Décoché;8f275798-5398-45af-adee-02f1ba35c3ca;9
+France;Croatie;25;445711038;445711038;707196238;706;708038;Décoché;Décoché;8e81dc5f-6d7d-4080-8d65-0d60e581692e;74
+France;Suède;25;445711051;445711051;707196251;706;708051;Décoché;Décoché;55d19a0c-4d5b-4ea3-b7af-2bca179e40b3;18
+France;Danemark;25;445711035;445711035;707196235;706;708035;Décoché;Décoché;3ffd1522-ec4c-42dc-9c10-509cf81895fd;20
+France;Finlande;25,5;44571105;44571105;70719625;706;70805;Décoché;Décoché;501529ad-c11f-4f86-8a86-3e3579e117c1;7
+France;Hongrie;27;445711043;445711043;707196243;706;708043;Décoché;Décoché;e4c16508-7de9-4622-a3ea-c53f60b88f27;143
+Importation/Exportation;EXONERATION;0;44571;44571;707;706;708196;Décoché;Coché;7784a54d-c6a3-41f5-a291-96fc4adb2241;-1
+Importation/Exportation;Luxembourg;17;445711032;445711032;707196232;706;708032;Décoché;Décoché;becc6da7-176e-43af-b301-872548321411;12
+Importation/Exportation;Malte;18;445711044;445711044;707196244;706;708044;Décoché;Décoché;4047b1fb-e049-40c8-a416-2c312c231495;251
+Importation/Exportation;Allemagne;19;445711019;445711019;70719;706;70819;Décoché;Décoché;5fa3e7a3-b4ae-42e8-81cf-62d96c116e40;1
+Importation/Exportation;Roumanie;19;445711047;445711047;707196247;706;708047;Décoché;Décoché;9e3e380e-5b3b-4e23-b2a5-ddbbdb873106;36
+Importation/Exportation;Chypre;19;44571104;44571104;70719624;706;70804;Décoché;Décoché;a2194cc0-0e8d-4b52-b258-f87e6cba8a75;76
+Importation/Exportation;Slovaquie;20;445711049;445711049;707196249;706;708049;Décoché;Décoché;c09a8fac-ee59-4ad1-b3aa-4a2ad5fdf7b1;37
+Importation/Exportation;EXPORT;20;44571102;44571102;707;706;708197;Décoché;Décoché;9a6c00f4-5f89-4d56-b8ba-72b6af12e922;-2
+Importation/Exportation;UK;20;44571103;44571103;707196202;706;7081971;Décoché;Décoché;06723519-d501-4f26-81d2-83c68ff51e86;17
+Importation/Exportation;Bulgarie;20;445711034;445711034;707196234;706;708034;Décoché;Décoché;5198871e-1cdc-4f61-9ad0-b498cb00f8c7;248
+Importation/Exportation;Estonie;20;445711036;445711036;707196236;706;708036;Décoché;Décoché;17b2fb50-d4f0-4b63-bc6e-c32f81f24e18;86
+Importation/Exportation;Autriche;20;445711046;445711046;707196246;706;708046;Décoché;Décoché;eff93834-b30a-48fb-9bf3-fb66024b9112;2
+Importation/Exportation;Lituanie;21;445711042;445711042;707196242;706;708042;Décoché;Décoché;615a90f6-6a77-42d8-9d73-1615f214230c;249
+Importation/Exportation;Lettonie;21;445711041;445711041;707196241;706;708041;Décoché;Décoché;80d85b76-8766-438d-a9bd-22983f14e9df;250
+Importation/Exportation;Pays-Bas;21;445711045;445711045;707196245;706;708045;Décoché;Décoché;63326b21-e80a-4cfa-ae4b-3e3671041233;13
+Importation/Exportation;Belgique;21;445711031;445711031;707196231;706;708031;Décoché;Décoché;6d748a8e-eef2-45fd-b401-64e656088e18;3
+Importation/Exportation;Espagne;21;445711021;445711021;70719621;706;70821;Décoché;Décoché;17eb7b23-978f-49f9-a9ae-8dec02b2464f;6
+Importation/Exportation;Rep. Tcheque;21;4457110211;4457110211;707196211;706;708211;Décoché;Décoché;7918c4bf-24fc-42e5-80ed-e9fe13e8b266;16
+Importation/Exportation;Italie;22;445711022;445711022;70719622;706;70822;Décoché;Décoché;c8e43977-dd8e-4d54-8b8e-a81914d4751c;10
+Importation/Exportation;Slovénie;22;445711048;445711048;707196248;706;708048;Décoché;Décoché;93f1b778-c4d5-4e06-ba7d-ecdbfe27db90;252
+Importation/Exportation;Portugal;23;445711033;445711033;707196233;706;708033;Décoché;Décoché;fc23a72a-8ee7-4355-b129-09bc4f257672;15
+Importation/Exportation;Pologne;23;4457110222;4457110222;707196222;706;708222;Décoché;Décoché;37a81bc9-6267-4d7d-aca9-57c68d538590;14
+Importation/Exportation;Irlande;23;445711039;445711039;707196239;706;708039;Décoché;Décoché;10297a1e-0f68-4b71-aa30-c046e03fedc8;-9999
+Importation/Exportation;Grèce;24;445711037;445711037;707196237;706;708037;Décoché;Décoché;74217f79-e339-4e8f-b838-e36e05995be1;9
+Importation/Exportation;Croatie;25;445711038;445711038;707196238;706;708038;Décoché;Décoché;7e265cb2-4b9c-4be5-9e57-216427b85124;74
+Importation/Exportation;Danemark;25;445711035;445711035;707196235;706;708035;Décoché;Décoché;83687e27-78a4-4e6f-8001-7bde6ddda5f0;20
+Importation/Exportation;Suède;25;445711051;445711051;707196251;706;708051;Décoché;Décoché;da5c71a0-6cfe-4259-8def-dcf8a1f18b91;18
+Importation/Exportation;Finlande;25,5;44571105;44571105;70719625;706;70805;Décoché;Décoché;902a4dec-2d1b-4466-ab42-e3b944be4518;7
+Importation/Exportation;Hongrie;27;445711043;445711043;707196243;706;708043;Décoché;Décoché;80a0ffe9-cbb1-4bcf-b135-e8135cbe598e;143
