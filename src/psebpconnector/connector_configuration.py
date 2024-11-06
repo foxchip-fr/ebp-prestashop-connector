@@ -32,6 +32,7 @@ class ConnectorConfiguration:
     url: str
     apikey: str
     ebp_executable_path: Path
+    vat_mapping_file_path: Path
 
     def __init__(self, config_path: Path):
         self._read_configuration(config_path)
@@ -52,6 +53,7 @@ class ConnectorConfiguration:
             raise ValueError(f"Error reading the configuration file: {e}")
 
     def load_required_options(self):
-        for key in ['url', 'apikey', 'ebp_executable_path']:
+        for key in ['url', 'apikey', 'ebp_executable_path', 'vat_mapping_file_path']:
             setattr(self, key, self._config.get('main', key))
         self.ebp_executable_path = Path(self.ebp_executable_path)
+        self.vat_mapping_file_path = Path(self.vat_mapping_file_path)

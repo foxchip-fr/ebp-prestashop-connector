@@ -23,10 +23,12 @@ SOFTWARE.
 """
 
 
+import csv
+from multiprocessing.managers import Value
+
 from psebpconnector.connector_configuration import ConnectorConfiguration
+from psebpconnector.webservice import Webservice
 from pathlib import Path
-from requests.auth import HTTPBasicAuth
-from urllib.parse import urlencode
 
 
 class Connector:
@@ -40,4 +42,26 @@ class Connector:
             ValueError: If there is an error reading the configuration file.
         """
         self.config = ConnectorConfiguration(config_path)
+        self.webservice = Webservice(self.config.url, self.config.apikey)
+        self.vat_mapping = {}
 
+        self.load_vat_mapping(self.config.vat_mapping_file_path)
+
+    def load_vat_mapping(self, vat_file_path: Path):
+        with open(vat_file_path, 'r') as f:
+            reader = csv.reader(f, delimiter=';')
+            next(reader, None)  # Skip header
+
+            line_number = 2
+            for rows in reader:
+                if rows:
+                    if len(rows) != 12:
+                        raise ValueError(f"{vat_file_path.name}, l.{line_number}: expected 12 columns")
+                    territoriality, vat, ebp_id, ps_country_id = rows[0], rows[2], rows[10], int(rows[11])
+                    self.vat_mapping.setdefault(territoriality, {})
+
+                    # EXONERATION
+                    vat = 0.0 if ps_country_id == -1 else float(vat.replace(',','.'))
+
+                    self.vat_mapping[territoriality][ps_country_id] = (vat, ebp_id)
+                line_number += 1
