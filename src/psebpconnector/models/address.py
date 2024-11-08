@@ -27,6 +27,7 @@ from dataclasses import dataclass
 from typing import Any, Optional
 
 
+@dataclass
 class Address(Model):
     id: int
     id_customer: int = 0
