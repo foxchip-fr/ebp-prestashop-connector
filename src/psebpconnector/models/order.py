@@ -30,6 +30,7 @@ from typing import Any, Optional
 @dataclass
 class Order(Model):
     id: int
+    id_address_delivery: int = 0
     id_address_invoice: int = 0
     id_cart: int = 0
     id_currency: int = 0
