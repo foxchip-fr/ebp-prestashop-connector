@@ -74,6 +74,25 @@ class Connector:
                 territoriality = self.payment_method_mapping[payment_method][has_vat][2]
                 assert territoriality in self.vat_mapping, f"Territoriality '{territoriality}' not found in VAT mapping file"
 
+    def _write_product_line(self, product):
+        """ write a line in the products CSV
+        :param product: Product to import in EBP
+
+            CSV ROWS:
+            - product code (EAN)
+            - Name
+            - Type
+            - Price (WT)
+            - EAN
+        """
+        self.csv_products.writerow([
+            product.ean13,
+            product.name,
+            'BIEN',
+            product.price,
+            product.ean13,
+        ])
+
     def check_consistency(self):
         self._check_territoriality_consistency()
 
