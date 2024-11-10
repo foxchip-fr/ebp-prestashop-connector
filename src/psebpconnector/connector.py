@@ -24,6 +24,7 @@ SOFTWARE.
 
 
 import csv
+import time
 
 from psebpconnector.connector_configuration import ConnectorConfiguration
 from psebpconnector.webservice import Webservice
@@ -41,8 +42,30 @@ class Connector:
             ValueError: If there is an error reading the configuration file.
         """
         self.config = ConnectorConfiguration(config_path)
+        self._startup_time = time.time()
+        self._csv_products_path = Path(self.config.working_directory / f"articles_{self._startup_time}.csv")
+        self._csv_products_file = open(self._csv_products_path, 'w')
+        self.csv_products = csv.writer(self._csv_products_file, delimiter=';', quotechar='"')
+        self._csv_orders_path = Path(self.config.working_directory / f"orders_{self._startup_time}.csv")
+        self._csv_orders_file = open(self._csv_orders_path, 'w')
+        self.csv_orders = csv.writer(self._csv_orders_file, delimiter=';', quotechar='"')
+        self.exported_products = set()
         self.webservice = Webservice(self.config.url, self.config.apikey)
+
+        """
+            Payment Method Mapping
+            ----------------------
+            <Prestashop payment method field>:
+                <VAT applied to order (bool)>: (<ebp_client_code>, <currency>, <territoriality>)
+        """
         self.payment_method_mapping = {}
+
+        """
+            VAT Mapping
+            -----------
+            <territoriality>:
+                <country_id>: (<vat_value>,<ebp_vat_id>)
+        """
         self.vat_mapping = {}
 
     def _check_territoriality_consistency(self):
@@ -53,6 +76,31 @@ class Connector:
 
     def check_consistency(self):
         self._check_territoriality_consistency()
+
+    def export_product(self, product_id: int):
+        if product_id not in self.exported_products:
+            product = self.webservice.get_product(product_id)
+            self._write_product_line(product)
+            self.exported_products.add(product_id)
+
+    def export_orders_and_products(self):
+        for order in self.webservice.get_orders_to_export():
+            vat_applied = float(order.total_products_wt) - float(order.total_products) > 0
+            try:
+                ebp_client_code, currency, territoriality = self.payment_method_mapping[order.payment][vat_applied]
+                address = self.webservice.get_address(order.id_address_delivery)
+                vat_value, ebp_vat_id = self.vat_mapping[territoriality][address.id_country]
+
+                # Get products
+                for order_row in order.associations['order_rows']:
+                    if order_row['product_id'] == 0:
+                        raise ValueError(order_row['product_id'])
+                    self.export_product(order_row['product_id'])
+                print(ebp_client_code, currency, territoriality, ebp_vat_id, vat_value)
+            except KeyError:
+                # TODO Log an error
+                print('Error with order ', order)
+                continue
 
     def load_payment_method_mapping(self):
         with open(self.config.payment_method_mapping_file_path, 'r') as f:
@@ -93,3 +141,4 @@ class Connector:
         self.load_vat_mapping()
         self.check_consistency()
         assert self.webservice.test_api_authentication(), "Unable to login"
+        self.export_orders_and_products()
