@@ -24,7 +24,7 @@ SOFTWARE.
 
 
 from psebpconnector.exceptions import BadHTTPCode
-from psebpconnector.models import Order, OrderPrinted, Product
+from psebpconnector.models import Address, Order, OrderPrinted, Product
 from requests import Response, Session
 from requests.auth import HTTPBasicAuth
 from typing import Dict, List, Optional
@@ -71,6 +71,10 @@ class Webservice:
 
         return result
 
+    def get_address(self, address_id: int) -> Address:
+        result = self._do_api_call(self._build_url(f"address/{address_id}"))
+        return Address.from_dict(result.json()['address'])
+
     def get_order(self, order_id: int) -> Order:
         """
         :param order_id: ID of the order to be retrieved
@@ -109,7 +113,7 @@ class Webservice:
 
     def get_product(self, product_id: int):
         result = self._do_api_call(self._build_url(f"products/{product_id}"))
-        return Product.from_dict(result['product'])
+        return Product.from_dict(result.json()['product'])
 
     def test_api_authentication(self) -> bool:
         s = Session()
