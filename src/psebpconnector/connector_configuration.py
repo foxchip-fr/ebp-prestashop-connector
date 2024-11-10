@@ -34,6 +34,7 @@ class ConnectorConfiguration:
     ebp_executable_path: Path
     payment_method_mapping_file_path: Path
     vat_mapping_file_path: Path
+    working_directory: Path
 
     def __init__(self, config_path: Path):
         self._read_configuration(config_path)
@@ -54,8 +55,14 @@ class ConnectorConfiguration:
             raise ValueError(f"Error reading the configuration file: {e}")
 
     def load_required_options(self):
-        for key in ['url', 'apikey', 'ebp_executable_path', 'payment_method_mapping_file_path', 'vat_mapping_file_path']:
+        for key in ['url',
+                    'apikey',
+                    'ebp_executable_path',
+                    'payment_method_mapping_file_path',
+                    'vat_mapping_file_path'
+                    'working_directory']:
             setattr(self, key, self._config.get('main', key))
         self.ebp_executable_path = Path(self.ebp_executable_path)
         self.payment_method_mapping_file_path = Path(self.payment_method_mapping_file_path)
         self.vat_mapping_file_path = Path(self.vat_mapping_file_path)
+        self.working_directory = Path(self.working_directory)
