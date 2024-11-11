@@ -24,7 +24,6 @@ SOFTWARE.
 
 
 import csv
-import dataclasses
 import logging
 import sys
 import time
