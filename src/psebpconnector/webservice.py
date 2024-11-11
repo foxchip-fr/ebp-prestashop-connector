@@ -24,7 +24,7 @@ SOFTWARE.
 
 
 from psebpconnector.exceptions import BadHTTPCode
-from psebpconnector.models import Address, Order, OrderPrinted, Product
+from psebpconnector.models import *
 from requests import Response, Session
 from requests.auth import HTTPBasicAuth
 from typing import Dict, List, Optional
@@ -56,7 +56,7 @@ class Webservice:
     def _build_url(self, endpoint: str, params: Optional[Dict[str, str]] = None):
         url = f"{self.url}/{endpoint}"
         if params:
-            url += '?' + urlencode(params)
+            url += '?' + urlencode(params, safe=':+')
         return url
 
     def _do_api_call(self,
@@ -72,8 +72,22 @@ class Webservice:
         return result
 
     def get_address(self, address_id: int) -> Address:
-        result = self._do_api_call(self._build_url(f"address/{address_id}"))
+        result = self._do_api_call(self._build_url(f"addresses/{address_id}"))
         return Address.from_dict(result.json()['address'])
+
+    def get_countries_iso_code(self) -> Dict[int, str]:
+        result = self._do_api_call(self._build_url('countries', {
+            'filter[active]': '1',
+            'display': '[id,iso_code]',
+        }))
+        return {country['id']: country['iso_code'] for country in result.json()['countries']}
+
+    def get_currencies_iso_code(self) -> Dict[int, str]:
+        result = self._do_api_call(self._build_url('currencies', {
+            'filter[active]': '1',
+            'display': '[id,iso_code]',
+        }))
+        return {currency['id']: currency['iso_code'] for currency in result.json()['currencies']}
 
     def get_order(self, order_id: int) -> Order:
         """
@@ -91,7 +105,7 @@ class Webservice:
         result = self._do_api_call(self._build_url(f"orders_printed/{order_printed_id}"))
         return OrderPrinted(**result.json()['order_printed'])
 
-    def get_orders_to_export(self):
+    def get_orders_to_export(self, valid_orders_status: List[str]):
         """
         Fetches a list of orders that have been marked as printed but not yet exported, in a paginated manner.
 
@@ -101,14 +115,18 @@ class Webservice:
             pagination_start = i * self._PAGINATION_SIZE
             pagination_stop = (i + 1) * self._PAGINATION_SIZE
 
-            result = self._do_api_call(self._build_url('orders_printed', {
-                'filter[exported]': '0',
+            result = self._do_api_call(self._build_url('orders_with_printed', {
+                'filter[orders_printed][exported]': '0',
+                'filter[current_state]': '[' + '|'.join(valid_orders_status) + ']',
                 'limit': f"{pagination_start},{pagination_stop}"
             }))
 
-            for order_printed_entry in result.json()['orders_printed']:
-                order_printed = self.get_order_printed(order_printed_entry['id'])
-                order = self.get_order(order_printed.id_order)
+            orders_list = result.json()
+            if not orders_list:
+                return
+
+            for order_entry in result.json()['orders']:
+                order = self.get_order(order_entry['id'])
                 yield order
 
     def get_product(self, product_id: int):

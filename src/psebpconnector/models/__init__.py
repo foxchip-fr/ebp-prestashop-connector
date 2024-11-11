@@ -25,4 +25,5 @@ SOFTWARE.
 from .address import Address
 from .order import Order
 from .order_printed import OrderPrinted
+from .order_row import OrderRow
 from .product import Product

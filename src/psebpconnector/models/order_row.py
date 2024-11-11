@@ -24,38 +24,17 @@ SOFTWARE.
 
 from psebpconnector.models.model import Model
 from dataclasses import dataclass
-from typing import Any, Optional
 
 
 @dataclass
-class Order(Model):
-    id: int
-    id_address_delivery: int = 0
-    id_address_invoice: int = 0
-    id_cart: int = 0
-    id_currency: int = 0
-    id_lang: int = 0
-    id_customer: int = 0
-    id_carrier: int = 0
-    id_shop_group: int = 0
-    id_shop: int = 0
-    associations: Optional[dict] = None
-    date_add: str = ""
-    conversion_rate: float = 1
-    current_state: int = 0
-    delivery_date: str = ''
-    delivery_number: str = ''
-    invoice_date: str = ''
-    invoice_number: str = ''
-    module: str = ''
-    payment: str = ''
-    reference: str = ''
-    shipping_number: str = ''
-    total_discount: float = 0
-    total_paid: float = 0
-    total_paid_real: float = 0
-    total_products: float = 0
-    total_products_wt: float = 0
-    total_shipping: float = 0
-    total_shipping_tax_incl: float = 0
-    total_shipping_tax_excl: float = 0
+class OrderRow(Model):
+    product_id: str
+    product_attribute_id: str
+    product_quantity: int
+    product_name: str
+    product_reference: str
+    product_ean13: str
+    product_upc: str
+    product_price: float
+    unit_price_tax_incl: float
+    unit_price_tax_excl: float

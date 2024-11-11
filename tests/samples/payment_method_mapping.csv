@@ -1,53 +1,53 @@
-MODE DE PAIEMENT PRESTASHOP;% TVA;CODE CLIENT EBP;DEVISE;TERRITORIALITE
-Amazon - FR;AVEC;AMAZONFR;€;France
-Amazon - FR;SANS;AMAZONEX;€;France
-Amazon - BE;AVEC;AMAZONBE;€;Assujetti établi hors de France 
-Amazon - BE;SANS;AMAZONEX;€;Assujetti établi hors de France 
-Amazon - DE;AVEC;AMAZONDE;€;Assujetti établi hors de France 
-Amazon - DE;SANS;AMAZONEX;€;Assujetti établi hors de France 
-Amazon - ES;AVEC;AMAZONES;€;Assujetti établi hors de France 
-Amazon - ES;SANS;AMAZONEX;€;Assujetti établi hors de France 
-Amazon - IT;AVEC;AMAZONIT;€;Assujetti établi hors de France 
-Amazon - IT;SANS;AMAZONEX;€;Assujetti établi hors de France 
-Amazon - NL;AVEC;AMAZONNL;€;Assujetti établi hors de France 
-Amazon - NL;SANS;AMAZONEX;€;Assujetti établi hors de France 
-Amazon - SE;AVEC;AMAZONSE;SEK;Assujetti établi hors de France 
-Amazon - SE;SANS;AMAZONEX;SEK;Assujetti établi hors de France 
-Amazon - PL;AVEC;AMAZONPL;PLN;Assujetti établi hors de France 
-Amazon - PL;SANS;AMAZONEX;PLN;Assujetti établi hors de France 
-Amazon - UK;AVEC;AMAZONUK;GBP;Importation/Exportation 
-Amazon - UK;SANS;AMAZONUKEX;GBP;Importation/Exportation 
-Amazon - US;SANS;AMAZONUS;USD;Importation/Exportation 
-Amazon - CA;SANS;AMAZONCA;CAD;Importation/Exportation 
-Amazon - JP;SANS;AMAZONJP;JPY;Importation/Exportation 
-Amazon - MX;SANS;AMAZONMX;MXN;Importation/Exportation 
-FNAC Marketplace - FR	;AVEC;FNAC;€;France
-FNAC Marketplace - FR	;SANS;COMPTOIREX;€;France
-FNAC Marketplace - BE-FR;AVEC;FNACBE;€;Assujetti établi hors de France 
-FNAC Marketplace - BE-FR;SANS;COMPTOIREX;€;Assujetti établi hors de France 
-FNAC Marketplace - PT;AVEC;FNACPT;€;Assujetti établi hors de France 
-FNAC Marketplace - PT;SANS;COMPTOIREX;€;Assujetti établi hors de France 
-FNAC Marketplace - ES;AVEC;FNACES;€;Assujetti établi hors de France 
-FNAC Marketplace - ES;SANS;COMPTOIREX;€;Assujetti établi hors de France 
-FNAC Marketplace - FR-DA;AVEC;DARTY;€;France
-FNAC Marketplace - FR-DA;SANS;COMPTOIREX;€;France
-Cdiscount - FR;AVEC;CDISCOUNT;€;France
-Cdiscount - FR;SANS;COMPTOIREX;€;France
-Ebay - FR - Creditcard;AVEC;EBAY;€;France
-Ebay - FR - Creditcard;SANS;COMPTOIREX;€;France
-Priceminister - FR;AVEC;PRICEMINIS;€;France
-Priceminister - FR;SANS;PRICEEX;€;France
-CM-CIC P@iement;AVEC;COMPTOIR;€;France
-CM-CIC P@iement;SANS;COMPTOIREX;€;France
-Espèces_Carte Bancaire Mag;AVEC;COMPTOIR;€;France
-Espèces_Carte Bancaire Mag;SANS;COMPTOIREX;€;France
-Carte Bancaire Mag;AVEC;COMPTOIR;€;France
-Carte Bancaire Mag;SANS;COMPTOIREX;€;France
-Chèque;AVEC;COMPTOIR;€;France
-Chèque;SANS;COMPTOIREX;€;France
-Espèces;AVEC;COMPTOIR;€;France
-Espèces;SANS;COMPTOIREX;€;France
-Paiement en magasin;AVEC;COMPTOIR;€;France
-Paiement en magasin;SANS;COMPTOIREX;€;France
-Virement bancaire;AVEC;COMPTOIR;€;France
-;SANS;COMPTOIREX;€;France
+MODE DE PAIEMENT PRESTASHOP;% TVA;CODE CLIENT EBP;DEVISE;TERRITORIALITE;CODE MODE REGLEMENT
+Amazon - FR;AVEC;AMAZONFR;€;France;AMFR
+Amazon - FR;SANS;AMAZONEX;€;France;AMFR
+Amazon - BE;AVEC;AMAZONBE;€;Assujetti établi hors de France;AMBE
+Amazon - BE;SANS;AMAZONEX;€;Assujetti établi hors de France;AMBE
+Amazon - DE;AVEC;AMAZONDE;€;Assujetti établi hors de France;AMDE
+Amazon - DE;SANS;AMAZONEX;€;Assujetti établi hors de France;AMDE
+Amazon - ES;AVEC;AMAZONES;€;Assujetti établi hors de France;AMES
+Amazon - ES;SANS;AMAZONEX;€;Assujetti établi hors de France;AMES
+Amazon - IT;AVEC;AMAZONIT;€;Assujetti établi hors de France;AMIT
+Amazon - IT;SANS;AMAZONEX;€;Assujetti établi hors de France;AMIT
+Amazon - NL;AVEC;AMAZONNL;€;Assujetti établi hors de France;AML
+Amazon - NL;SANS;AMAZONEX;€;Assujetti établi hors de France;AMNL
+Amazon - SE;AVEC;AMAZONSE;SEK;Assujetti établi hors de France;AMSE
+Amazon - SE;SANS;AMAZONEX;SEK;Assujetti établi hors de France;AMSE
+Amazon - PL;AVEC;AMAZONPL;PLN;Assujetti établi hors de France;AMPL
+Amazon - PL;SANS;AMAZONEX;PLN;Assujetti établi hors de France;AMPL
+Amazon - UK;AVEC;AMAZONUK;GBP;Importation/Exportation;AMUK
+Amazon - UK;SANS;AMAZONUKEX;GBP;Importation/Exportation;AMUK
+Amazon - US;SANS;AMAZONUS;USD;Importation/Exportation;AMUS
+Amazon - CA;SANS;AMAZONCA;CAD;Importation/Exportation;AMCA
+Amazon - JP;SANS;AMAZONJP;JPY;Importation/Exportation;AMJP
+Amazon - MX;SANS;AMAZONMX;MXN;Importation/Exportation;AMMX
+FNAC Marketplace - FR;AVEC;FNAC;€;France;FNAC
+FNAC Marketplace - FR;SANS;COMPTOIREX;€;France;FNAC
+FNAC Marketplace - BE-FR;AVEC;FNACBE;€;Assujetti établi hors de France;FNAC
+FNAC Marketplace - BE-FR;SANS;COMPTOIREX;€;Assujetti établi hors de France;FNAC
+FNAC Marketplace - PT;AVEC;FNACPT;€;Assujetti établi hors de France;FNAC
+FNAC Marketplace - PT;SANS;COMPTOIREX;€;Assujetti établi hors de France;FNAC
+FNAC Marketplace - ES;AVEC;FNACES;€;Assujetti établi hors de France;FNAC
+FNAC Marketplace - ES;SANS;COMPTOIREX;€;Assujetti établi hors de France;FNAC
+FNAC Marketplace - FR-DA;AVEC;DARTY;€;France;FNAC
+FNAC Marketplace - FR-DA;SANS;COMPTOIREX;€;France;FNAC
+Cdiscount - FR;AVEC;CDISCOUNT;€;France;CDIS
+Cdiscount - FR;SANS;COMPTOIREX;€;France;CDIS
+Ebay - FR - Creditcard;AVEC;EBAY;€;France;PAYPAL
+Ebay - FR - Creditcard;SANS;COMPTOIREX;€;France;PAYPAL
+Priceminister - FR;AVEC;PRICEMINIS;€;France;PRICE
+Priceminister - FR;SANS;PRICEEX;€;France;PRICE
+CM-CIC P@iement;AVEC;COMPTOIR;€;France;CB
+CM-CIC P@iement;SANS;COMPTOIREX;€;France;CB
+Espèces_Carte Bancaire Mag;AVEC;COMPTOIR;€;France;ESPCB
+Espèces_Carte Bancaire Mag;SANS;COMPTOIREX;€;France;ESPCB
+Carte Bancaire Mag;AVEC;COMPTOIR;€;France;CBMAG
+Carte Bancaire Mag;SANS;COMPTOIREX;€;France;CBMAG
+Chèque;AVEC;COMPTOIR;€;France;CHQ
+Chèque;SANS;COMPTOIREX;€;France;CHQ
+Espèces;AVEC;COMPTOIR;€;France;ESP
+Espèces;SANS;COMPTOIREX;€;France;ESP
+Paiement en magasin;AVEC;COMPTOIR;€;France;MAG
+Paiement en magasin;SANS;COMPTOIREX;€;France;MAG
+Virement bancaire;AVEC;COMPTOIR;€;France;VIRE
+Virement bancaire;SANS;COMPTOIREX;€;France;VIRE

@@ -24,14 +24,24 @@ SOFTWARE.
 
 
 import csv
+import dataclasses
+import logging
+import sys
 import time
 
+from dataclasses import asdict
+from datetime import datetime
 from psebpconnector.connector_configuration import ConnectorConfiguration
+from psebpconnector.exceptions import BadHTTPCode, InvalidOrder
+from psebpconnector.export_models import ExportOrderRow, ExportProduct
+from psebpconnector.models import Order, OrderRow, Address
 from psebpconnector.webservice import Webservice
 from pathlib import Path
 
 
 class Connector:
+    VAT_MAPPING_EXONERATION_ID = -1
+
     def __init__(self, config_path: Path):
         """
         New Connector object
@@ -41,8 +51,11 @@ class Connector:
             FileNotFoundError: If the configuration file does not exist at the given path.
             ValueError: If there is an error reading the configuration file.
         """
-        self.config = ConnectorConfiguration(config_path)
+        self.countries_iso_code = {}
+        self.currencies_iso_code = {}
         self._startup_time = time.time()
+        self.config = ConnectorConfiguration(config_path)
+        self._setup_logger()
         self._csv_products_path = Path(self.config.working_directory / f"articles_{self._startup_time}.csv")
         self._csv_products_file = open(self._csv_products_path, 'w')
         self.csv_products = csv.writer(self._csv_products_file, delimiter=';', quotechar='"')
@@ -68,58 +81,290 @@ class Connector:
         """
         self.vat_mapping = {}
 
+    def _check_if_vat_applied(self, order):
+        """ Check if VAT has been applied to this order by looking at the difference between the total order price
+            and the total order price without VAT.
+        """
+        vat_applied = float(order.total_products_wt) - float(order.total_products) > 0
+        self.logger.debug(f"Order {order.id}: total_products_wt: {order.total_products_wt}, "
+                          f"total_products: {order.total_products}, "
+                          f"VAT applied: {vat_applied}")
+        return vat_applied
+
     def _check_territoriality_consistency(self):
         for payment_method in self.payment_method_mapping:
             for has_vat in self.payment_method_mapping[payment_method]:
                 territoriality = self.payment_method_mapping[payment_method][has_vat][2]
                 assert territoriality in self.vat_mapping, f"Territoriality '{territoriality}' not found in VAT mapping file"
 
-    def _write_product_line(self, product):
-        """ write a line in the products CSV
-        :param product: Product to import in EBP
+    @staticmethod
+    def _compute_order_total(order, order_rows, vat_value):
+        total = 0.0
+        for order_row in order_rows:
+            total += float(order_row.unit_price_tax_excl) * int(order_row.product_quantity)
+        total += float(order.total_shipping_tax_excl)
+        return total * (1 + vat_value)
 
-            CSV ROWS:
-            - product code (EAN)
-            - Name
-            - Type
-            - Price (WT)
-            - EAN
+    def _get_country_iso_code(self, country_id):
+        if country_id not in self.countries_iso_code:
+            self.logger.error(f"Unable to find country iso code for country_id {country_id}")
+            raise InvalidOrder
+        return self.countries_iso_code[country_id]
+
+    def _get_currency_iso_code(self, currency_id):
+        if currency_id not in self.currencies_iso_code:
+            self.logger.error(f"Unable to find currency iso code for country_id {currency_id}")
+            raise InvalidOrder
+        return self.currencies_iso_code[currency_id]
+
+    def _get_info_from_payment_method(self, order, vat_applied):
+        try:
+            ebp_client_code, currency, territoriality, ebp_payment_method = self.payment_method_mapping[order.payment][vat_applied]
+        except KeyError:
+            self.logger.error(f"Order {order.id}: no payment method found for {order.payment}, with_vat: {vat_applied}, "
+                              f"skipping order {order.id}")
+            raise InvalidOrder
+        self.logger.debug(f"Order {order.id}: ebp_client_code: {ebp_client_code}, "
+                          f"currency: {currency}, "
+                          f"territoriality: {territoriality}, "
+                          f"ebp_payment_method: {ebp_payment_method}")
+        return ebp_client_code, currency, territoriality, ebp_payment_method
+
+    def _get_order_delivery_address(self, order):
+        try:
+            address = self.webservice.get_address(order.id_address_delivery)
+        except BadHTTPCode as e:
+            self.logger.error(f"Order {order.id}: error while trying to retrieve delivery address (ID "
+                              f"{order.id_address_delivery}) - {e}")
+            raise InvalidOrder
+        self.logger.debug(f"Order {order.id}: found delivery address {address}")
+        return address
+
+    def _get_order_invoice_address(self, order):
+        try:
+            address = self.webservice.get_address(order.id_address_invoice)
+        except BadHTTPCode as e:
+            self.logger.error(f"Order {order.id}: error while trying to retrieve invoice address (ID "
+                              f"{order.id_address_invoice}) - {e}")
+            raise InvalidOrder
+        self.logger.debug(f"Order {order.id}: found invoice address {address}")
+        return address
+
+    def _get_order_rows(self, order):
+        if (not isinstance(order.associations, dict)
+                or 'order_rows' not in order.associations
+                or len(order.associations['order_rows']) == 0):
+            self.logger.error(f"Order {order.id}: no product found for this order")
+            raise InvalidOrder
+
+        rows = []
+        try:
+            for order_row_entry in order.associations['order_rows']:
+                order_row = OrderRow.from_dict(order_row_entry)
+                self.logger.debug(f"Order {order.id}: has order row {order_row}")
+                if order_row.product_id == 0:
+                    self.logger.error(f"Order {order.id}: invalid product_id {order_row_entry['product_id']}, skipping")
+                    raise InvalidOrder
+                rows.append(order_row)
+        except (KeyError, TypeError) as e:
+            self.logger.error(f"Order {order.id}: malformed order rows - {order.associations}, {e}")
+            raise InvalidOrder
+        return rows
+
+    def _get_order_vat(self, order, territoriality, ps_country_id, vat_applied):
+        """ Get VAT rate and VAT EBP ID by looking in the mapping VAT_MAPPING file
+            :param order: current order
+            :param territoriality: territoriality guessed from payment method
+            :param ps_country_id: Prestashop country ID of the delivery address
         """
-        self.csv_products.writerow([
-            product.ean13,
-            product.name,
-            'BIEN',
-            product.price,
-            product.ean13,
-        ])
+        if territoriality not in self.vat_mapping:
+            self.logger.error(f"Order {order.id}: territoriality '{territoriality}' not found in VAT mapping file")
+            raise InvalidOrder
+
+        if vat_applied:
+            if ps_country_id not in self.vat_mapping[territoriality]:
+                self.logger.error(f"Order {order.id}: country ID '{ps_country_id}' not found in VAT mapping file for "
+                                  f"territoriality '{territoriality}'")
+                raise InvalidOrder
+            vat_value, ebp_vat_id = self.vat_mapping[territoriality][ps_country_id]
+        else:
+            if self.VAT_MAPPING_EXONERATION_ID not in self.vat_mapping[territoriality]:
+                self.logger.warning(f"Order {order.id}: VAT_MAPPING_EXONERATION_ID ({self.VAT_MAPPING_EXONERATION_ID}) "
+                                    f"not found in VAT mapping file for territoriality {territoriality}")
+                raise InvalidOrder
+            vat_value, ebp_vat_id = self.vat_mapping[territoriality][self.VAT_MAPPING_EXONERATION_ID]
+
+        self.logger.debug(f"Order {order.id}: vat_value={vat_value}, ebp_vat_id={ebp_vat_id}")
+        return vat_value, ebp_vat_id
+
+    def _process_order(self, order):
+        self.logger.debug(order)
+        vat_applied = self._check_if_vat_applied(order)
+        ebp_client_code, currency, territoriality, ebp_payment_method = self._get_info_from_payment_method(order, vat_applied)
+        delivery_address = self._get_order_delivery_address(order)
+        invoice_address = self._get_order_invoice_address(order)
+        vat_value, ebp_vat_id = self._get_order_vat(order, territoriality, delivery_address.id_country, vat_applied)
+        order_rows = self._get_order_rows(order)
+        for order_row in order_rows:
+            self.export_product(order_row.product_id)
+            self.export_order_row(order, order_row, delivery_address, invoice_address, ebp_vat_id,
+                                  ebp_client_code, ebp_payment_method, territoriality, vat_value)
+
+    def _setup_logger(self):
+        logger = logging.getLogger('ps_ebp_connector')
+        logger.setLevel(logging.DEBUG)
+
+        # STDOUT logs
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setFormatter(logging.Formatter('ps_ebp_connector - [%(levelname)s] %(message)s'))
+        handler.setLevel(logging.DEBUG)
+        handler.addFilter(lambda record: record.levelno <= logging.INFO)
+        logger.addHandler(handler)
+
+        # STDERR logs
+        handler = logging.StreamHandler(sys.stderr)
+        handler.setFormatter(logging.Formatter('ps_ebp_connector - [%(levelname)s] %(message)s'))
+        handler.setLevel(logging.WARNING)
+        logger.addHandler(handler)
+
+        handler = logging.FileHandler(Path(self.config.working_directory / f"logs_{self._startup_time}.txt"))
+        handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(message)s'))
+        handler.setLevel(logging.DEBUG)
+        logger.addHandler(handler)
+
+        self.logger = logger
+
+    @staticmethod
+    def _write_csv_line(obj, spamwriter):
+        """write a line in a CSV using a dataclass as input"""
+        spamwriter.writerow(list(asdict(obj).values()))
 
     def check_consistency(self):
         self._check_territoriality_consistency()
 
+    def export_order_row(self,
+                         order: Order,
+                         order_row: OrderRow,
+                         delivery_address: Address,
+                         invoice_address: Address,
+                         ebp_vat_id: str,
+                         ebp_client_code: str,
+                         ebp_payment_method: str,
+                         ebp_territoriality: str,
+                         vat_rate: float):
+        apply_currency_conversion = float(order.conversion_rate) != 1.0
+        export_order_row = ExportOrderRow(
+            document_use_original_number='N',
+            document_number_prefix='V',
+            document_number_suffix=f"{order.id}",
+            document_number=f"{order.id}",
+            document_date=datetime.fromisoformat(order.date_add).strftime('%d/%m/%Y'),
+            document_client_code=ebp_client_code,
+            document_civil='',
+            document_client_name=f"{invoice_address.lastname.upper()} {invoice_address.firstname.upper()}",
+            document_invoice_address_1=f"{invoice_address.address1}",
+            document_invoice_address_2=f"{invoice_address.address2}",
+            document_invoice_address_3='',
+            document_invoice_address_4='',
+            document_invoice_zip_code=f"{invoice_address.postcode}",
+            document_invoice_city=f"{invoice_address.city}",
+            document_invoice_department='',
+            document_invoice_country_iso_code=self._get_country_iso_code(invoice_address.id_country),
+            document_invoice_lastname=f"{invoice_address.lastname.upper()}",
+            document_invoice_firstname=f"{invoice_address.firstname.upper()}",
+            document_invoice_phone=f"{invoice_address.phone}",
+            document_invoice_mobile_phone=f"{invoice_address.phone_mobile}",
+            document_invoice_fax='',
+            document_invoice_email='nomail@nomail.fr',
+            document_delivery_address_1=f"{delivery_address.address1}",
+            document_delivery_address_2=f"{delivery_address.address2}",
+            document_delivery_address_3='',
+            document_delivery_address_4='',
+            document_delivery_zip_code=f"{delivery_address.postcode}",
+            document_delivery_city=f"{delivery_address.city}",
+            document_delivery_department='',
+            document_delivery_country_iso_code=self._get_country_iso_code(delivery_address.id_country),
+            document_delivery_lastname=f"{delivery_address.lastname.upper()}",
+            document_delivery_firstname=f"{delivery_address.firstname.upper()}",
+            document_delivery_phone=f"{delivery_address.phone}",
+            document_delivery_mobile_phone=f"{delivery_address.phone_mobile}",
+            document_delivery_fax='',
+            document_delivery_email='nomail@nomail.fr',
+            document_territoriality=ebp_territoriality,
+            document_vat_number=f"{invoice_address.vat_number}",
+            document_discount_pct=f"{round(float(order.total_discount) / (float(order.total_products) + float(order.total_shipping)), 6)}",
+            document_discount_amount=f"{order.total_discount}",
+            document_escompte_pct='',
+            document_escompte_amount='',
+            document_shipping_cost_code='',
+            document_shipping_cost_wt=f"{round(float(order.total_shipping) / (1 + vat_rate), 6)}",
+            document_shipping_cost_vat_rate=f"{round(vat_rate * 100, 6)}",
+            document_shipping_tva_code=f"{ebp_vat_id}",
+            document_total_wt='',
+            document_total=f"{round(float(order.total_products) + float(order.total_shipping), 6)}",
+            document_notes=f"Commande importée n°{order.id} - {order.reference}",
+            line_product_code=f"{order_row.product_ean13}",
+            line_description=f"{order_row.product_name}",
+            line_quantity=f"{order_row.product_quantity}",
+            line_vat_rate=f"{round(vat_rate * 100, 6)}",
+            line_vat_code=f"{ebp_vat_id}",
+            document_commercial_code='',
+            line_unit_price_wt='',
+            line_unit_price=f"{round(float(order_row.product_price), 6)}",
+            line_discount_pct='0',
+            line_discount_wt='0',
+            line_price_wt='',
+            line_price='',
+            line_commercial_code='',
+            document_payment_method=f"{ebp_payment_method}",
+            deposit_amount='',
+            deposit_payment_method='',
+            deposit_date='',
+            document_ignore_prices='0',
+            document_name_delivery_address=f"{delivery_address.lastname.upper()} {delivery_address.firstname.upper()}",
+            document_depot='',
+            document_currency_rate=f"{round(float(order.conversion_rate), 6)}" if apply_currency_conversion else '',
+            document_currency_iso_code=f"{self._get_currency_iso_code(order.id_currency)}" if apply_currency_conversion else '',
+            deposit_amount_currency='',
+            deposit_currency_rate='',
+            deposit_currency_iso_code='',
+            document_currency_amount=f"{round((float(order.total_products) + float(order.total_shipping)) * float(order.conversion_rate), 6)}" if apply_currency_conversion else '',
+            document_currency_amount_wt='',
+            document_currency_amount_shipping_wt=f"{round((float(order.total_shipping) / (1 + vat_rate)) * float(order.conversion_rate), 6)}" if apply_currency_conversion else '',
+            line_currency_unit_price_wt=f"{round((float(order_row.product_price) / (1 + vat_rate)) * float(order.conversion_rate), 6)}" if apply_currency_conversion else '',
+            line_currency_cumulative_discount_amount_wt='',
+            line_currency_total_wt='',
+            document_currency_used='T' if apply_currency_conversion else 'P',
+            document_series='',
+            document_business_code='',
+            mroad_id='',
+            mroad_technicality='',
+            document_client_order_number='',
+            line_ignore_linked_products='',
+            document_language='')
+        self.logger.debug(f"Order {order.id}, export_order_row: {export_order_row}")
+        self._write_csv_line(export_order_row, self.csv_orders)
+
     def export_product(self, product_id: int):
         if product_id not in self.exported_products:
+            self.logger.info(f"Exporting product {product_id}")
             product = self.webservice.get_product(product_id)
-            self._write_product_line(product)
+            export_product = ExportProduct(
+                code=product.ean13,
+                name=product.name[0]['value'],
+                type='BIEN',
+                price=product.price,
+                ean=product.ean13)
+            self.logger.debug(f"{export_product}")
+            self._write_csv_line(export_product, self.csv_products)
             self.exported_products.add(product_id)
 
     def export_orders_and_products(self):
-        for order in self.webservice.get_orders_to_export():
-            vat_applied = float(order.total_products_wt) - float(order.total_products) > 0
+        for order in self.webservice.get_orders_to_export(self.config.order_valid_status):
             try:
-                ebp_client_code, currency, territoriality = self.payment_method_mapping[order.payment][vat_applied]
-                address = self.webservice.get_address(order.id_address_delivery)
-                vat_value, ebp_vat_id = self.vat_mapping[territoriality][address.id_country]
-
-                # Get products
-                for order_row in order.associations['order_rows']:
-                    if order_row['product_id'] == 0:
-                        raise ValueError(order_row['product_id'])
-                    self.export_product(order_row['product_id'])
-                print(ebp_client_code, currency, territoriality, ebp_vat_id, vat_value)
-            except KeyError:
-                # TODO Log an error
-                print('Error with order ', order)
-                continue
+                self._process_order(order)
+            except InvalidOrder:
+                self.logger.warning(f"Skipping order {order.id}")
 
     def load_payment_method_mapping(self):
         with open(self.config.payment_method_mapping_file_path, 'r') as f:
@@ -129,12 +374,16 @@ class Connector:
             line_number = 2
             for rows in reader:
                 if rows:
-                    if len(rows) != 5:
+                    if len(rows) != 6:
                         raise ValueError(f"{self.config.payment_method_mapping_file_path.name}, l.{line_number}: expected 5 columns")
-                    payment_method, with_vat, client_code, currency, territoriality = rows
+                    ps_payment_method, with_vat, client_code, currency, territoriality, ebp_payment_method = rows
                     with_vat = with_vat == 'AVEC'
-                    self.payment_method_mapping.setdefault(payment_method.strip(), {})
-                    self.payment_method_mapping[payment_method.strip()][with_vat] = (client_code.strip(), currency.strip(), territoriality.strip())
+                    self.payment_method_mapping.setdefault(ps_payment_method.strip(), {})
+                    self.payment_method_mapping[ps_payment_method.strip()][with_vat] = (
+                        client_code.strip(),
+                        currency.strip(),
+                        territoriality.strip(),
+                        ebp_payment_method.strip())
 
     def load_vat_mapping(self):
         with open(self.config.vat_mapping_file_path, 'r') as f:
@@ -150,14 +399,23 @@ class Connector:
                     self.vat_mapping.setdefault(territoriality, {})
 
                     # EXONERATION
-                    vat = 0.0 if ps_country_id == -1 else float(vat.replace(',','.'))
+                    vat = float(vat.replace(',','.')) / 100
 
                     self.vat_mapping[territoriality][ps_country_id] = (vat, ebp_id)
                 line_number += 1
 
-    def run(self):
-        self.load_payment_method_mapping()
-        self.load_vat_mapping()
-        self.check_consistency()
-        assert self.webservice.test_api_authentication(), "Unable to login"
-        self.export_orders_and_products()
+    def run(self) -> int:
+        try:
+            self.load_payment_method_mapping()
+            self.load_vat_mapping()
+            self.check_consistency()
+            assert self.webservice.test_api_authentication(), "Unable to login"
+            self.countries_iso_code = self.webservice.get_countries_iso_code()
+            self.currencies_iso_code = self.webservice.get_currencies_iso_code()
+            self.logger.info("Starting orders retrieving")
+            self.export_orders_and_products()
+            return 0
+        except Exception as e:
+            self.logger.critical("A critical error was raised, see bellow")
+            self.logger.exception(e)
+            return 1

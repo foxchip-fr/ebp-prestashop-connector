@@ -25,6 +25,7 @@ SOFTWARE.
 
 from configparser import ConfigParser, Error
 from pathlib import Path
+from typing import List
 
 
 class ConnectorConfiguration:
@@ -32,6 +33,7 @@ class ConnectorConfiguration:
     url: str
     apikey: str
     ebp_executable_path: Path
+    order_valid_status: List[str]
     payment_method_mapping_file_path: Path
     vat_mapping_file_path: Path
     working_directory: Path
@@ -58,11 +60,13 @@ class ConnectorConfiguration:
         for key in ['url',
                     'apikey',
                     'ebp_executable_path',
+                    'order_valid_status',
                     'payment_method_mapping_file_path',
-                    'vat_mapping_file_path'
-                    'working_directory']:
+                    'vat_mapping_file_path',
+                    'working_directory',]:
             setattr(self, key, self._config.get('main', key))
         self.ebp_executable_path = Path(self.ebp_executable_path)
+        self.order_valid_status = [status.strip() for status in self.order_valid_status.split(',')]
         self.payment_method_mapping_file_path = Path(self.payment_method_mapping_file_path)
         self.vat_mapping_file_path = Path(self.vat_mapping_file_path)
         self.working_directory = Path(self.working_directory)
