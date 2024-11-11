@@ -309,7 +309,7 @@ class Connector:
             line_vat_code=f"{ebp_vat_id}",
             document_commercial_code='',
             line_unit_price_wt='',
-            line_unit_price=f"{round(float(order_row.product_price), 6)}",
+            line_unit_price=f"{round(float(order_row.unit_price_tax_incl), 6)}",
             line_discount_pct='0',
             line_discount_wt='0',
             line_price_wt='',
