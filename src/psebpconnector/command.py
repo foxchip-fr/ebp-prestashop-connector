@@ -22,15 +22,19 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+import os
 import sys
 from pathlib import Path
+
 from psebpconnector.connector import Connector
 
 
 def main():
     if len(sys.argv) < 2:
-        print('Please provide a valid path to the configuration file', file=sys.stderr)
-    Connector(Path(sys.argv[1]))
+        config_file_path = Path(os.environ['PROGRAMDATA']) / Path('PS EBP Connector') / Path('config.ini')
+    else:
+        config_file_path = sys.argv[1]
+    Connector(Path(config_file_path)).run()
 
 
 if __name__ == '__main__':
