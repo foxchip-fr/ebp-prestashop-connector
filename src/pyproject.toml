@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "psebpconnector"
+version = "0.0.1"
+description = ""
+authors = ["Guillaume Chinal <contact@guillaumechinal.fr>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+requests = "~2"
+
+[tool.poetry.scripts]
+foxsmsd = "psebpconnector.command:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
