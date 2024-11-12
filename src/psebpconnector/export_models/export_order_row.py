@@ -70,10 +70,10 @@ class ExportOrderRow:
     document_escompte_pct: str
     document_escompte_amount: str
     document_shipping_cost_code: str
-    document_shipping_cost_wt: str
+    document_shipping_cost_notax: str
     document_shipping_cost_vat_rate: str
     document_shipping_tva_code: str
-    document_total_wt: str
+    document_total_notax: str
     document_total: str
     document_notes: str
     line_product_code: str
@@ -82,11 +82,11 @@ class ExportOrderRow:
     line_vat_rate: str
     line_vat_code: str
     document_commercial_code: str
-    line_unit_price_wt: str
+    line_unit_price_notax: str
     line_unit_price: str
     line_discount_pct: str
-    line_discount_wt: str
-    line_price_wt: str
+    line_discount_notax: str
+    line_price_notax: str
     line_price: str
     line_commercial_code: str
     document_payment_method: str
@@ -102,11 +102,11 @@ class ExportOrderRow:
     deposit_currency_rate: str
     deposit_currency_iso_code: str
     document_currency_amount: str
-    document_currency_amount_wt: str
-    document_currency_amount_shipping_wt: str
-    line_currency_unit_price_wt: str
-    line_currency_cumulative_discount_amount_wt: str
-    line_currency_total_wt: str
+    document_currency_amount_notax: str
+    document_currency_amount_shipping_notax: str
+    line_currency_unit_price_notax: str
+    line_currency_cumulative_discount_amount_notax: str
+    line_currency_total_notax: str
     document_currency_used: str
     document_series: str
     document_business_code: str
