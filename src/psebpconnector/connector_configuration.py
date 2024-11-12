@@ -37,6 +37,9 @@ class ConnectorConfiguration:
     payment_method_mapping_file_path: Path
     vat_mapping_file_path: Path
     working_directory: Path
+    ebp_articles_config_name: str = 'foxchip_ebp_connector'
+    ebp_orders_config_name: str = 'foxchip_ebp_connector'
+    ebp_database_path: Path
 
     def __init__(self, config_path: Path):
         self._read_configuration(config_path)
@@ -60,6 +63,7 @@ class ConnectorConfiguration:
         for key in ['url',
                     'apikey',
                     'ebp_executable_path',
+                    'ebp_database_path',
                     'order_valid_status',
                     'payment_method_mapping_file_path',
                     'vat_mapping_file_path',
