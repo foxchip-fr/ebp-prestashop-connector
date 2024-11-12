@@ -25,6 +25,7 @@ SOFTWARE.
 
 import csv
 import logging
+import subprocess
 import sys
 import time
 
@@ -56,10 +57,10 @@ class Connector:
         self.config = ConnectorConfiguration(config_path)
         self._setup_logger()
         self._csv_products_path = Path(self.config.working_directory / f"articles_{self._startup_time}.csv")
-        self._csv_products_file = open(self._csv_products_path, 'w')
+        self._csv_products_file = open(self._csv_products_path, 'w', encoding='utf-8-sig', newline='')
         self.csv_products = csv.writer(self._csv_products_file, delimiter=';', quotechar='"')
         self._csv_orders_path = Path(self.config.working_directory / f"orders_{self._startup_time}.csv")
-        self._csv_orders_file = open(self._csv_orders_path, 'w')
+        self._csv_orders_file = open(self._csv_orders_path, 'w', encoding='utf-8-sig', newline='')
         self.csv_orders = csv.writer(self._csv_orders_file, delimiter=';', quotechar='"')
         self.exported_products = set()
         self.webservice = Webservice(self.config.url, self.config.apikey)
@@ -364,6 +365,32 @@ class Connector:
             except InvalidOrder:
                 self.logger.warning(f"Skipping order {order.id}")
 
+    def import_files(self):
+        self._csv_products_file.close()
+        self._csv_orders_file.close()
+
+        import_products_command = [
+            str(self.config.ebp_executable_path),
+            '/Gui=false;' + str(self.config.working_directory / f"ebp_import_products_logs_{self._startup_time}.txt"),
+            '/Database=' + str(self.config.ebp_database_path) + ';EBPSDK',
+            '/Import=' + str(self._csv_products_path) + ';Items;' + self.config.ebp_articles_config_name
+        ]
+
+        import_orders_command = [
+            str(self.config.ebp_executable_path),
+            '/Gui=false;' + str(self.config.working_directory / f"ebp_import_orders_logs_{self._startup_time}.txt"),
+            '/Database=' + str(self.config.ebp_database_path) + ';EBPSDK',
+            '/Import=' + str(self._csv_orders_path) + ';SaleInvoices;' + self.config.ebp_orders_config_name
+        ]
+
+        self.logger.info('Importing products')
+        self.logger.debug(f"Subprocess args: {import_products_command}")
+        subprocess.run(import_products_command)
+
+        self.logger.info('Importing orders')
+        self.logger.debug(f"Subprocess args: {import_orders_command}")
+        subprocess.run(import_orders_command)
+
     def load_payment_method_mapping(self):
         with open(self.config.payment_method_mapping_file_path, 'r') as f:
             reader = csv.reader(f, delimiter=';')
@@ -412,6 +439,7 @@ class Connector:
             self.currencies_iso_code = self.webservice.get_currencies_iso_code()
             self.logger.info("Starting orders retrieving")
             self.export_orders_and_products()
+            self.import_files()
             return 0
         except Exception as e:
             self.logger.critical("A critical error was raised, see bellow")
