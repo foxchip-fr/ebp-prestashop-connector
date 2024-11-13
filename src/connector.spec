@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['psebpconnector/connector.py'],
+    ['psebpconnector/command.py'],
     pathex=[],
     binaries=[],
     datas=[],
