@@ -209,6 +209,7 @@ class Connector:
             self.export_product(order_row.product_id)
             self.export_order_row(order, order_row, delivery_address, invoice_address, ebp_vat_id,
                                   ebp_client_code, ebp_payment_method, territoriality, vat_value)
+            self.webservice.set_order_exported(order)
 
     def _setup_logger(self):
         logger = logging.getLogger('ps_ebp_connector')

@@ -23,6 +23,7 @@ SOFTWARE.
 """
 
 
+from datetime import datetime
 from psebpconnector.exceptions import BadHTTPCode
 from psebpconnector.models import *
 from requests import Response, Session
@@ -97,12 +98,16 @@ class Webservice:
         result = self._do_api_call(self._build_url(f"orders/{order_id}"))
         return Order.from_dict(result.json()['order'])
 
-    def get_order_printed(self, order_printed_id: int) -> OrderPrinted:
+    def get_order_printed(self, order_id: int) -> OrderPrinted:
         """
-        :param order_printed_id: The unique identifier for the printed order.
+        :param order_id: The unique identifier of the order
         :return: An instance of the OrderPrinted class containing details of the printed order.
         """
-        result = self._do_api_call(self._build_url(f"orders_printed/{order_printed_id}"))
+        result = self._do_api_call(self._build_url(f"orders_printed", {
+            'filter[id_order]': f"{order_id}",
+        }))
+        id_order_printed = result.json()['orders_printed'][0]['id']
+        result = self._do_api_call(self._build_url(f"orders_printed/{id_order_printed}"))
         return OrderPrinted(**result.json()['order_printed'])
 
     def get_orders_to_export(self, valid_orders_status: List[str]):
@@ -132,6 +137,20 @@ class Webservice:
     def get_product(self, product_id: int):
         result = self._do_api_call(self._build_url(f"products/{product_id}"))
         return Product.from_dict(result.json()['product'])
+
+    def set_order_exported(self, order: Order):
+        order_printed = self.get_order_printed(order.id)
+
+        patch_xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<prestashop xmlns:xlink="http://www.w3.org/1999/xlink">
+  <order_printed>
+    <id><![CDATA[{order_printed.id}]]></id>
+    <exported><![CDATA[1]]></exported>
+    <exported_date><![CDATA[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]]></exported_date>
+  </order_printed>
+</prestashop>"""
+
+        self._do_api_call(self._build_url(f"orders_printed/{order_printed.id_order}"), method='patch', data=patch_xml)
 
     def test_api_authentication(self) -> bool:
         s = Session()
