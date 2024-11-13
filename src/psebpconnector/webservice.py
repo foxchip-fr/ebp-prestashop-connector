@@ -67,7 +67,7 @@ class Webservice:
         result = getattr(self._session, method)(url, data=data)
 
         if result.status_code not in expected_result_codes:
-            raise BadHTTPCode(f"{method.upper()} {url}: Bad HTTP status code {result.status_code}")
+            raise BadHTTPCode(f"{method.upper()} {url}: Bad HTTP status code {result.status_code}\n{result.text}")
 
         return result
 
