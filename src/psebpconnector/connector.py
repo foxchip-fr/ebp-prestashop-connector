@@ -442,6 +442,6 @@ class Connector:
             self.import_files()
             return 0
         except Exception as e:
-            self.logger.critical("A critical error was raised, see bellow")
+            self.logger.critical("A critical error was raised, see below")
             self.logger.exception(e)
             return 1
