@@ -32,3 +32,4 @@ class Product(Model):
     ean13: str = ''
     name: str = ''
     description: str = ''
+    wholesale_price: str = ''

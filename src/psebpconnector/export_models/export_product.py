@@ -32,3 +32,4 @@ class ExportProduct:
     type: str = 'BIEN'
     price: str = ''
     ean: str = ''
+    wholesale_price: str = ''

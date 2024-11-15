@@ -354,6 +354,7 @@ class Connector:
                 name=product.name[0]['value'],
                 type='BIEN',
                 price=product.price,
+                wholesale_price=product.wholesale_price,
                 ean=product.ean13)
             self.logger.debug(f"{export_product}")
             self._write_csv_line(export_product, self.csv_products)
