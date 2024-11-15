@@ -183,7 +183,7 @@ class Connector:
 
         if vat_applied:
             if ps_country_id not in self.vat_mapping[territoriality]:
-                self.logger.error(f"Order {order.id}: country ID '{ps_country_id}' not found in VAT mapping file for "
+                self.logger.error(f"Order {order.id}: country ID '{ps_country_id}' ({self._get_country_iso_code(ps_country_id)}) not found in VAT mapping file for "
                                   f"territoriality '{territoriality}'")
                 raise InvalidOrder
             vat_value, ebp_vat_id = self.vat_mapping[territoriality][ps_country_id]
