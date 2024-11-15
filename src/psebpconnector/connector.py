@@ -258,7 +258,7 @@ class Connector:
             document_number_prefix='V',
             document_number_suffix=f"{order.id}",
             document_number=f"{order.id}",
-            document_date=datetime.fromisoformat(order.date_add).strftime('%d/%m/%Y'),
+            document_date=datetime.now().strftime('%d/%m/%Y'),
             document_client_code=ebp_client_code,
             document_civil='',
             document_client_name=f"{invoice_address.lastname.upper()} {invoice_address.firstname.upper()}",
