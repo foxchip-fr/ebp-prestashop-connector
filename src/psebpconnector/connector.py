@@ -434,11 +434,15 @@ class Connector:
     def run(self) -> int:
         try:
             self.load_payment_method_mapping()
+            self.logger.debug(f"payment method mapping: {self.payment_method_mapping}")
             self.load_vat_mapping()
+            self.logger.debug(f"vat mapping: {self.vat_mapping}")
             self.check_consistency()
             assert self.webservice.test_api_authentication(), "Unable to login"
             self.countries_iso_code = self.webservice.get_countries_iso_code()
+            self.logger.debug(f"countries iso codes: {self.countries_iso_code}")
             self.currencies_iso_code = self.webservice.get_currencies_iso_code()
+            self.logger.debug(f"currencies iso codes: {self.currencies_iso_code}")
             self.logger.info("Starting orders retrieving")
             self.export_orders_and_products()
             self.import_files()
