@@ -117,13 +117,13 @@ class Webservice:
         :return: A generator yielding orders that need to be exported
         """
         for i in range(self._MAX_CALLS):
-            pagination_start = i * self._PAGINATION_SIZE
-            pagination_stop = (i + 1) * self._PAGINATION_SIZE
+            offset = i * self._PAGINATION_SIZE
+            print(f"pagination_start: {offset}")
 
             result = self._do_api_call(self._build_url('orders_with_printed', {
                 'filter[orders_printed][exported]': '0',
                 'filter[current_state]': '[' + '|'.join(valid_orders_status) + ']',
-                'limit': f"{pagination_start},{pagination_stop}"
+                'limit': f"{offset},{self._PAGINATION_SIZE}"
             }))
 
             orders_list = result.json()
