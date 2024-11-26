@@ -40,6 +40,10 @@ class ConnectorConfiguration:
     ebp_articles_config_name: str = 'foxchip_ebp_connector'
     ebp_orders_config_name: str = 'foxchip_ebp_connector'
     ebp_database_path: Path
+    o365_client_id = None
+    o365_email = None
+    o365_secret = None
+    o365_tenant_id = None
 
     def __init__(self, config_path: Path):
         self._read_configuration(config_path)
@@ -74,3 +78,7 @@ class ConnectorConfiguration:
         self.payment_method_mapping_file_path = Path(self.payment_method_mapping_file_path)
         self.vat_mapping_file_path = Path(self.vat_mapping_file_path)
         self.working_directory = Path(self.working_directory)
+
+        if self._config.has_section ('o365'):
+            for key in ['client_id', 'email', 'secret', 'tenant_id']:
+                setattr(self, f"o365_{key}", self._config.get('o365', key))

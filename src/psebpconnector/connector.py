@@ -32,8 +32,10 @@ import time
 from dataclasses import asdict
 from datetime import datetime
 from psebpconnector.connector_configuration import ConnectorConfiguration
+from psebpconnector.dummy_handler import DummyHandler
 from psebpconnector.exceptions import BadHTTPCode, InvalidOrder
 from psebpconnector.export_models import ExportOrderRow, ExportProduct
+from psebpconnector.mailer import Mailer
 from psebpconnector.models import Order, OrderRow, Address
 from psebpconnector.webservice import Webservice
 from pathlib import Path
@@ -55,6 +57,7 @@ class Connector:
         self.currencies_iso_code = {}
         self._startup_time = time.time()
         self.config = ConnectorConfiguration(config_path)
+        self._logs_file_path = Path(self.config.working_directory / f"logs_{self._startup_time}.txt")
         self._setup_logger()
         self._csv_products_path = Path(self.config.working_directory / f"articles_{self._startup_time}.csv")
         self._csv_products_file = open(self._csv_products_path, 'w', encoding='utf-8-sig', newline='')
@@ -64,6 +67,17 @@ class Connector:
         self.csv_orders = csv.writer(self._csv_orders_file, delimiter=';', quotechar='"')
         self.exported_products = set()
         self.webservice = Webservice(self.config.url, self.config.apikey)
+        self._ebp_import_products_logs_path = self.config.working_directory / f"ebp_import_products_logs_{self._startup_time}.txt"
+        self._ebp_import_orders_logs_path = self.config.working_directory / f"ebp_import_orders_logs_{self._startup_time}.txt"
+
+        if self.config.o365_email:
+            self.mailer = Mailer(self.config.o365_client_id,
+                                 self.config.o365_secret,
+                                 self.config.o365_tenant_id,
+                                 self.config.o365_email)
+        else:
+            self.mailer = None
+
 
         """
             Payment Method Mapping
@@ -228,9 +242,13 @@ class Connector:
         handler.setLevel(logging.WARNING)
         logger.addHandler(handler)
 
-        handler = logging.FileHandler(Path(self.config.working_directory / f"logs_{self._startup_time}.txt"))
+        handler = logging.FileHandler(self._logs_file_path)
         handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(message)s'))
         handler.setLevel(logging.DEBUG)
+        logger.addHandler(handler)
+
+        handler = DummyHandler()
+        handler.setLevel(logging.WARNING)
         logger.addHandler(handler)
 
         self.logger = logger
@@ -242,6 +260,13 @@ class Connector:
 
     def check_consistency(self):
         self._check_territoriality_consistency()
+
+    def errors_logged(self):
+        return self.logger.handlers[3].log_emitted
+
+    def errors_raised_by_ebp(self):
+        with open(self._ebp_import_products_logs_path, 'r') as f:
+            return 'erreur' in f.read().lower()
 
     def export_order_row(self,
                          order: Order,
@@ -373,14 +398,14 @@ class Connector:
 
         import_products_command = [
             str(self.config.ebp_executable_path),
-            '/Gui=false;' + str(self.config.working_directory / f"ebp_import_products_logs_{self._startup_time}.txt"),
+            '/Gui=false;' + str(self._ebp_import_products_logs_path),
             '/Database=' + str(self.config.ebp_database_path) + ';EBPSDK',
             '/Import=' + str(self._csv_products_path) + ';Items;' + self.config.ebp_articles_config_name
         ]
 
         import_orders_command = [
             str(self.config.ebp_executable_path),
-            '/Gui=false;' + str(self.config.working_directory / f"ebp_import_orders_logs_{self._startup_time}.txt"),
+            '/Gui=false;' + str(self._ebp_import_orders_logs_path),
             '/Database=' + str(self.config.ebp_database_path) + ';EBPSDK',
             '/Import=' + str(self._csv_orders_path) + ';SaleInvoices;' + self.config.ebp_orders_config_name
         ]
@@ -439,6 +464,8 @@ class Connector:
             self.logger.debug(f"vat mapping: {self.vat_mapping}")
             self.check_consistency()
             assert self.webservice.test_api_authentication(), "Unable to login"
+            if self.mailer:
+                self.mailer.try_login()
             self.countries_iso_code = self.webservice.get_countries_iso_code()
             self.logger.debug(f"countries iso codes: {self.countries_iso_code}")
             self.currencies_iso_code = self.webservice.get_currencies_iso_code()
@@ -446,6 +473,15 @@ class Connector:
             self.logger.info("Starting orders retrieving")
             self.export_orders_and_products()
             self.import_files()
+            self.logger.handlers[2].flush()
+            self.logger.handlers[2].close()
+            if self.mailer and (self.errors_logged or self.errors_raised_by_ebp):
+                self.mailer.send_mail("PS EBP Connector - Erreurs lors de l'exécution",
+                                      "Des erreurs ont été constatées lors de l'exécution du connecteur, consultez les "
+                                      "journaux en PJ.",
+                                      "contact@guillaumechinal.fr",
+                                      [self._logs_file_path, self._ebp_import_products_logs_path, self._ebp_import_orders_logs_path])
+
             return 0
         except Exception as e:
             self.logger.critical("A critical error was raised, see below")
