@@ -1,0 +1,7 @@
+Import
+	0/0 enregistrements ont été importés :
+ - 0 enregistrements créés.
+ - 0 enregistrements mis à jour.
+ - 0 enregistrements non importés.
+
+

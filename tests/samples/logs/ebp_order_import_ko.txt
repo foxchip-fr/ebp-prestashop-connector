@@ -1,0 +1,16 @@
+Import
+	11/12 enregistrements ont été importés :
+ - 11 enregistrements créés.
+ - 0 enregistrements mis à jour.
+ - 1 enregistrements non importés.
+Erreur lors de l'import de l'enregistrement 12/12
+Le document 551039 ne sera pas importé
+La fiche AML correspondant au champ Code mode de règlement n'existe pas.
+
+
+--Information--
+	Erreur lors de l'import de l'enregistrement 12/12
+--Erreur--
+	Le document 551039 ne sera pas importé
+--Erreur--
+	La fiche AML correspondant au champ Code mode de règlement n'existe pas.
