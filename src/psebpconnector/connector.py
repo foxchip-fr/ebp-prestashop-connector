@@ -265,8 +265,8 @@ class Connector:
         return self.logger.handlers[3].log_emitted
 
     def errors_raised_by_ebp(self):
-        with open(self._ebp_import_products_logs_path, 'r') as f:
-            return 'erreur' in f.read().lower()
+        return ('erreur' in self._ebp_import_orders_logs_path.read_text().lower()
+                or 'erreur' in self._ebp_import_products_logs_path.read_text().lower())
 
     def export_order_row(self,
                          order: Order,
