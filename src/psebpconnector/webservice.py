@@ -118,7 +118,6 @@ class Webservice:
         """
         for i in range(self._MAX_CALLS):
             offset = i * self._PAGINATION_SIZE
-            print(f"pagination_start: {offset}")
 
             result = self._do_api_call(self._build_url('orders_with_printed', {
                 'filter[orders_printed][exported]': '0',
