@@ -50,6 +50,7 @@ def offline_connector(request, mocker):
     mocker.patch("psebpconnector.webservice.Webservice.get_product", new=get_product)
     mocker.patch("psebpconnector.webservice.Webservice.test_api_authentication", return_value=True)
     mocker.patch("psebpconnector.webservice.Webservice.set_order_exported")
+    mocker.patch("psebpconnector.webservice.Webservice.set_order_refund")
     mocker.patch("psebpconnector.connector.Connector.import_files")
     connector = Connector(Path(__file__).parent / 'samples/config/config_file_ok.ini')
     return connector
