@@ -76,8 +76,46 @@ PRODUCTS = {
                ean13='987654321098',
                name=[{'value':'Product 3'}],
                wholesale_price='44.100000',
-               description='desc Product 3')
+               description='desc Product 3'),
+    66882: Product(id=66882,
+                   price=30.000000,
+                   ean13='4983164196146',
+                   name=[{'value':'Figurine One Piece - Monkey.D.Luffy Battle Record Collection II 15cm'}],
+                   wholesale_price='19.350000'),
 }
+
+SINGLE_ORDER_REFUND = [
+    Order(
+        id=123456,
+        id_address_delivery='fr',
+        id_address_invoice='fr',
+        conversion_rate='1.000000',
+        payment='FNAC Marketplace - FR',
+        total_discount=0,
+        total_paid='43.500000',
+        total_paid_real='87.000000',
+        total_products='30.000000',
+        total_products_wt='36.000000',
+        total_shipping='7.500000',
+        total_shipping_tax_incl='7.500000',
+        total_shipping_tax_excl='6.250000',
+        is_refund = True,
+        associations={'order_rows': [{'id': 980417,
+                                      'product_id': 66882,
+                                      'product_attribute_id': 0,
+                                      'product_quantity': 1,
+                                      'product_name': 'Figurine One Piece - Monkey.D.Luffy Battle Record Collection II 15cm',
+                                      'product_reference': '4983164196146',
+                                      'product_ean13': '4983164196146',
+                                      'product_isbn': '',
+                                      'product_upc': '',
+                                      'product_price': '30.000000',
+                                      'id_customization': 0,
+                                      'unit_price_tax_incl': '36.000000',
+                                      'unit_price_tax_excl': '30.000000'
+                                      }]}
+    )
+]
 
 SINGLE_ORDER_FR_ONE_PRODUCT = [
     Order(

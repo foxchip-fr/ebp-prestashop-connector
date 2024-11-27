@@ -72,6 +72,20 @@ class Webservice:
 
         return result
 
+    def _set_order_exported_field(self, order: Order, field_value: int):
+        order_printed = self.get_order_printed(order.id)
+
+        patch_xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+        <prestashop xmlns:xlink="http://www.w3.org/1999/xlink">
+          <order_printed>
+            <id><![CDATA[{order_printed.id}]]></id>
+            <exported><![CDATA[{field_value}]]></exported>
+            <exported_date><![CDATA[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]]></exported_date>
+          </order_printed>
+        </prestashop>"""
+
+        self._do_api_call(self._build_url(f"orders_printed/{order_printed.id_order}"), method='patch', data=patch_xml)
+
     def get_address(self, address_id: int) -> Address:
         result = self._do_api_call(self._build_url(f"addresses/{address_id}"))
         return Address.from_dict(result.json()['address'])
@@ -110,46 +124,57 @@ class Webservice:
         result = self._do_api_call(self._build_url(f"orders_printed/{id_order_printed}"))
         return OrderPrinted(**result.json()['order_printed'])
 
-    def get_orders_to_export(self, valid_orders_status: List[str]):
+    def get_orders_to_export(self, valid_orders_status: List[str], refund_orders_status: List[str]):
         """
         Fetches a list of orders that have been marked as printed but not yet exported, in a paginated manner.
 
         :return: A generator yielding orders that need to be exported
         """
+
+        exporting_regular_orders = True
+        exporting_refunds = False
         for i in range(self._MAX_CALLS):
             offset = i * self._PAGINATION_SIZE
 
-            result = self._do_api_call(self._build_url('orders_with_printed', {
-                'filter[orders_printed][exported]': '0',
-                'filter[current_state]': '[' + '|'.join(valid_orders_status) + ']',
-                'limit': f"{offset},{self._PAGINATION_SIZE}"
-            }))
+            if exporting_regular_orders:
+                result = self._do_api_call(self._build_url('orders_with_printed', {
+                    'filter[orders_printed][exported]': '0',
+                    'filter[current_state]': '[' + '|'.join(valid_orders_status) + ']',
+                    'limit': f"{offset},{self._PAGINATION_SIZE}"
+                }))
+            elif exporting_refunds:
+                result = self._do_api_call(self._build_url('orders_with_printed', {
+                    'filter[orders_printed][exported]': '1',
+                    'filter[current_state]': '[' + '|'.join(refund_orders_status) + ']',
+                    'limit': f"{offset},{self._PAGINATION_SIZE}"
+                }))
+            else:
+                break
 
             orders_list = result.json()
-            if not orders_list:
-                return
 
-            for order_entry in result.json()['orders']:
-                order = self.get_order(order_entry['id'])
-                yield order
+            if orders_list:
+                for order_entry in result.json()['orders']:
+                    order = self.get_order(order_entry['id'])
+                    order.is_refund = exporting_refunds
+                    yield order
+            else:
+                if exporting_regular_orders:
+                    exporting_regular_orders = False
+                    exporting_refunds = True
+                else:
+                    exporting_refunds = False
+
 
     def get_product(self, product_id: int):
         result = self._do_api_call(self._build_url(f"products/{product_id}"))
         return Product.from_dict(result.json()['product'])
 
     def set_order_exported(self, order: Order):
-        order_printed = self.get_order_printed(order.id)
+        self._set_order_exported_field(order, 1)
 
-        patch_xml = f"""<?xml version="1.0" encoding="UTF-8"?>
-<prestashop xmlns:xlink="http://www.w3.org/1999/xlink">
-  <order_printed>
-    <id><![CDATA[{order_printed.id}]]></id>
-    <exported><![CDATA[1]]></exported>
-    <exported_date><![CDATA[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]]></exported_date>
-  </order_printed>
-</prestashop>"""
-
-        self._do_api_call(self._build_url(f"orders_printed/{order_printed.id_order}"), method='patch', data=patch_xml)
+    def set_order_refund(self, order:Order):
+        self._set_order_exported_field(order, 2)
 
     def test_api_authentication(self) -> bool:
         s = Session()

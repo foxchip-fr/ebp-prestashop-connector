@@ -39,6 +39,7 @@ class Order(Model):
     id_carrier: int = 0
     id_shop_group: int = 0
     id_shop: int = 0
+    is_refund: bool = False
     associations: Optional[dict] = None
     date_add: str = ""
     conversion_rate: float = 1

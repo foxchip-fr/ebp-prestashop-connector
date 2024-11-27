@@ -78,7 +78,33 @@ EXPECTED_RESULTS = [
                 'wholesale_price': '20.700000'
             }]
         )
+    ),
+    (
+        SINGLE_ORDER_REFUND,
+        (
+            [{
+                'line_quantity': '-1',
+                'line_vat_rate': '20.000000',
+                'line_unit_price': '36.000000',
+                'document_payment_method': 'FNAC',
+                'document_shipping_cost_notax': '-6.250000',
+                'document_currency_rate': '',
+                'line_vat_code': '36cab0de-3e5b-4bee-a556-8eabb1673e76',
+            }],
+            [{
+                'code': '4983164196146',
+                'name': 'Figurine One Piece - Monkey.D.Luffy Battle Record Collection II 15cm',
+                'type': 'BIEN',
+                'price': '30.000000',
+                'ean': '4983164196146',
+                'wholesale_price': '19.350000',
+            }]
+        )
     )
+]
+
+EXPECTED_RESULTS_REFUNDS = [
+
 ]
 
 def _fake_write_csv_line(_, obj, __):
@@ -94,7 +120,7 @@ def _fake_write_csv_line(_, obj, __):
 
 
 @pytest.mark.parametrize("should", EXPECTED_RESULTS)
-def test_order(offline_connector, mocker, should):
+def test_orders(offline_connector, mocker, should):
     global EXPORTED_ORDERS
     global EXPORTED_PRODUCTS
 

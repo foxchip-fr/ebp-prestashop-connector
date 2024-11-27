@@ -69,6 +69,7 @@ class ConnectorConfiguration:
                     'ebp_executable_path',
                     'ebp_database_path',
                     'order_valid_status',
+                    'order_refund_status',
                     'payment_method_mapping_file_path',
                     'vat_mapping_file_path',
                     'working_directory',]:

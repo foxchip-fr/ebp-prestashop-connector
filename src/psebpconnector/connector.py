@@ -223,7 +223,10 @@ class Connector:
             self.export_product(order_row.product_id)
             self.export_order_row(order, order_row, delivery_address, invoice_address, ebp_vat_id,
                                   ebp_client_code, ebp_payment_method, territoriality, vat_value)
-            self.webservice.set_order_exported(order)
+            if order.is_refund:
+                self.webservice.set_order_refund(order)
+            else:
+                self.webservice.set_order_exported(order)
 
     def _setup_logger(self):
         logger = logging.getLogger('ps_ebp_connector')
@@ -367,6 +370,12 @@ class Connector:
             document_client_order_number='',
             line_ignore_linked_products='',
             document_language='')
+        if order.is_refund:
+            export_order_row.document_total = f"-{export_order_row.document_total}"
+            export_order_row.line_quantity = f"-{export_order_row.line_quantity}"
+            export_order_row.document_shipping_cost_notax = f"-{export_order_row.document_shipping_cost_notax}"
+            if export_order_row.document_currency_amount_shipping_notax:
+                export_order_row.document_currency_amount_shipping_notax = f"-{export_order_row.document_currency_amount_shipping_notax}"
         self.logger.debug(f"Order {order.id}, export_order_row: {export_order_row}")
         self._write_csv_line(export_order_row, self.csv_orders)
 
