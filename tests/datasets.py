@@ -25,7 +25,7 @@ SOFTWARE.
 from psebpconnector.models import *
 
 ADDRESSES = {
-    123456: Address(id=123456,
+    'fr': Address(id=123456,
         id_customer=123456,
         id_manufacturer=123,
         id_supplier=0,
@@ -59,25 +59,63 @@ CURRENCIES = {
 }
 
 PRODUCTS = {
-    123456: Product(id=123456,
-                    price=37.500000,
-                    ean13='4573102667311',
-                    name=[{'value':'Product 1'}],
-                    wholesale_price='24.255000',
-                    description='desc Product 1'),
-    654321: Product(id=654321,
-                    price=65.833333,
-                    ean13='987654321098',
-                    name=[{'value':'Product 2'}],
-                    wholesale_price='44.100000',
-                    description='desc Product 2')
+    1: Product(id=1,
+               price=32.500000,
+               ean13='1111111111111',
+               name=[{'value':'Product 1'}],
+               wholesale_price='20.700000',
+               description='desc Product 1'),
+    2: Product(id=2,
+               price=37.500000,
+               ean13='4573102667311',
+               name=[{'value':'Product 2'}],
+               wholesale_price='24.255000',
+               description='desc Product 2'),
+    3: Product(id=3,
+               price=65.833333,
+               ean13='987654321098',
+               name=[{'value':'Product 3'}],
+               wholesale_price='44.100000',
+               description='desc Product 3')
 }
+
+SINGLE_ORDER_FR_ONE_PRODUCT = [
+    Order(
+        id=123456,
+        id_address_delivery='fr',
+        id_address_invoice='fr',
+        conversion_rate='1.000000',
+        payment='Ebay - FR - Creditcard',
+        total_discount=0,
+        total_paid='39.000000',
+        total_paid_real='78.000000',
+        total_products='32.500000',
+        total_products_wt='39.000000',
+        total_shipping='0.000000',
+        total_shipping_tax_incl='0.000000',
+        total_shipping_tax_excl='0.000000',
+        associations={'order_rows': [{'id': 99999,
+                                      'product_id': 1,
+                                      'product_attribute_id': 0,
+                                      'product_quantity': 1,
+                                      'product_name': 'Product 1',
+                                      'product_reference': '1111111111111',
+                                      'product_ean13': '1111111111111',
+                                      'product_isbn': '',
+                                      'product_upc': '',
+                                      'product_price': '32.500000',
+                                      'id_customization': 0,
+                                      'unit_price_tax_incl': '39.000000',
+                                      'unit_price_tax_excl': '32.500000'
+                                      }]}
+    )
+]
 
 SINGLE_ORDER_WITH_TWO_PRODUCTS_BAD_AMOUNT = [
     Order(
         id=123456,
-        id_address_delivery=123456,
-        id_address_invoice=123456,
+        id_address_delivery='fr',
+        id_address_invoice='fr',
         id_cart=123456,
         id_currency=1,
         id_lang=1,
@@ -86,7 +124,7 @@ SINGLE_ORDER_WITH_TWO_PRODUCTS_BAD_AMOUNT = [
         id_shop_group=1,
         id_shop=1,
         associations={'order_rows': [{'id': 123456,
-                                      'product_id': 123456,
+                                      'product_id': 2,
                                       'product_attribute_id': 0,
                                       'product_quantity': 1,
                                       'product_name': 'Product 1',
@@ -100,7 +138,7 @@ SINGLE_ORDER_WITH_TWO_PRODUCTS_BAD_AMOUNT = [
                                       'unit_price_tax_excl': '37.500000'
                                       },
                                      {'id': 999999,
-                                      'product_id': 654321,
+                                      'product_id': 3,
                                       'product_attribute_id': 0,
                                       'product_quantity': 1,
                                       'product_name': 'Product 2',
@@ -134,10 +172,11 @@ SINGLE_ORDER_WITH_TWO_PRODUCTS_BAD_AMOUNT = [
     )
 ]
 
+
 SINGLE_ORDER_WITH_UNKNOWN_PAYMENT_METHOD = [
     Order(
         id=123456,
-        id_address_delivery=123456,
+        id_address_delivery='fr',
         id_address_invoice=123456,
         id_cart=123456,
         id_currency=1,
@@ -147,7 +186,7 @@ SINGLE_ORDER_WITH_UNKNOWN_PAYMENT_METHOD = [
         id_shop_group=1,
         id_shop=1,
         associations={'order_rows': [{'id': 123456,
-                                      'product_id': 123456,
+                                      'product_id': 2,
                                       'product_attribute_id': 0,
                                       'product_quantity': 1,
                                       'product_name': 'Product 1',
@@ -161,7 +200,7 @@ SINGLE_ORDER_WITH_UNKNOWN_PAYMENT_METHOD = [
                                       'unit_price_tax_excl': '37.500000'
                                       },
                                      {'id': 999999,
-                                      'product_id': 654321,
+                                      'product_id': 3,
                                       'product_attribute_id': 0,
                                       'product_quantity': 1,
                                       'product_name': 'Product 2',
