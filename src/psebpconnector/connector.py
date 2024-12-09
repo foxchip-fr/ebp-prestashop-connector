@@ -376,6 +376,8 @@ class Connector:
             export_order_row.document_shipping_cost_notax = f"-{export_order_row.document_shipping_cost_notax}"
             if export_order_row.document_currency_amount_shipping_notax:
                 export_order_row.document_currency_amount_shipping_notax = f"-{export_order_row.document_currency_amount_shipping_notax}"
+            export_order_row.document_number_suffix += "11"
+            export_order_row.document_number += "11"
         self.logger.debug(f"Order {order.id}, export_order_row: {export_order_row}")
         self._write_csv_line(export_order_row, self.csv_orders)
 
