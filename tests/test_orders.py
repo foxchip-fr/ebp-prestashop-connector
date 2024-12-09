@@ -38,6 +38,8 @@ EXPECTED_RESULTS = [
         SINGLE_ORDER_FR_ONE_PRODUCT,
         (
             [{
+                'document_number': '123456',
+                'document_number_suffix': '123456',
                 'document_use_original_number': 'N',
                 'line_quantity': '1',
                 'line_vat_rate': '20.000000',
@@ -61,6 +63,8 @@ EXPECTED_RESULTS = [
         SINGLE_ORDER_FR_ONE_PRODUCT*2,
         (
             [{
+                'document_number': '123456',
+                'document_number_suffix': '123456',
                 'document_use_original_number': 'N',
                 'line_quantity': '1',
                 'line_vat_rate': '20.000000',
@@ -83,6 +87,8 @@ EXPECTED_RESULTS = [
         SINGLE_ORDER_REFUND,
         (
             [{
+                'document_number': '12345611',
+                'document_number_suffix': '12345611',
                 'line_quantity': '-1',
                 'line_vat_rate': '20.000000',
                 'line_unit_price': '36.000000',
