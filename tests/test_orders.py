@@ -26,6 +26,8 @@ import pytest
 
 from .datasets import *
 from .fixtures import offline_connector
+from pathlib import Path
+from psebpconnector.connector import Connector
 from psebpconnector.export_models import ExportOrderRow, ExportProduct
 
 
@@ -153,3 +155,24 @@ def test_orders(offline_connector, mocker, should):
     for i in range(len(should_products)):
         for key, value in should_products[i].items():
             assert getattr(EXPORTED_PRODUCTS[i], key) == value, f"Wrong value for field {key}, product n°{i + 1}"
+
+def test_orders_limit(offline_connector, mocker):
+    global EXPORTED_ORDERS
+    EXPORTED_ORDERS = []
+
+    connector = Connector(Path(__file__).parent / 'samples/config/config_file_ok_limit_1.ini')
+    mocker.patch("psebpconnector.webservice.Webservice.get_orders_to_export", return_value=SINGLE_ORDER_FR_ONE_PRODUCT*3)
+    mocker.patch('psebpconnector.connector.Connector._write_csv_line', new=_fake_write_csv_line)
+    assert connector.run() == 0
+    assert len(EXPORTED_ORDERS) == 1
+
+def test_orders_nolimit(offline_connector, mocker):
+    global EXPORTED_ORDERS
+    EXPORTED_ORDERS = []
+
+    connector = Connector(Path(__file__).parent / 'samples/config/config_file_ok.ini')
+    mocker.patch("psebpconnector.webservice.Webservice.get_orders_to_export", return_value=SINGLE_ORDER_FR_ONE_PRODUCT*3)
+    mocker.patch('psebpconnector.connector.Connector._write_csv_line', new=_fake_write_csv_line)
+    assert connector.run() == 0
+    assert len(EXPORTED_ORDERS) == 3
+
