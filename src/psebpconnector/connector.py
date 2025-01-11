@@ -397,11 +397,16 @@ class Connector:
             self.exported_products.add(product_id)
 
     def export_orders_and_products(self):
+        exported_orders_counter = 0
         for order in self.webservice.get_orders_to_export(self.config.order_valid_status):
+            if self.config.order_limit and exported_orders_counter >= self.config.order_limit:
+                break
             try:
                 self._process_order(order)
             except InvalidOrder:
                 self.logger.warning(f"Skipping order {order.id}")
+            finally:
+                exported_orders_counter += 1
 
     def import_files(self):
         self._csv_products_file.close()

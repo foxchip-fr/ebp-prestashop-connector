@@ -25,7 +25,7 @@ SOFTWARE.
 
 from configparser import ConfigParser, Error
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 
 class ConnectorConfiguration:
@@ -40,6 +40,7 @@ class ConnectorConfiguration:
     ebp_articles_config_name: str = 'foxchip_ebp_connector'
     ebp_orders_config_name: str = 'foxchip_ebp_connector'
     ebp_database_path: Path
+    order_limit: Optional[int]
     o365_client_id = None
     o365_email = None
     o365_secret = None
@@ -83,3 +84,9 @@ class ConnectorConfiguration:
         if self._config.has_section ('o365'):
             for key in ['client_id', 'email', 'secret', 'tenant_id']:
                 setattr(self, f"o365_{key}", self._config.get('o365', key))
+
+        if self._config.has_option('main', 'order_limit'):
+            self.order_limit = int(self._config.get('main', 'order_limit'))
+        else:
+            self.order_limit = 0
+
