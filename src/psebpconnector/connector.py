@@ -398,7 +398,7 @@ class Connector:
 
     def export_orders_and_products(self):
         exported_orders_counter = 0
-        for order in self.webservice.get_orders_to_export(self.config.order_valid_status):
+        for order in self.webservice.get_orders_to_export(self.config.order_valid_status, self.config.order_refund_status):
             if self.config.order_limit and exported_orders_counter >= self.config.order_limit:
                 break
             try:

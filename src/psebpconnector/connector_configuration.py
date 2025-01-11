@@ -34,6 +34,7 @@ class ConnectorConfiguration:
     apikey: str
     ebp_executable_path: Path
     order_valid_status: List[str]
+    order_refund_status: List[str]
     payment_method_mapping_file_path: Path
     vat_mapping_file_path: Path
     working_directory: Path
@@ -77,6 +78,7 @@ class ConnectorConfiguration:
             setattr(self, key, self._config.get('main', key))
         self.ebp_executable_path = Path(self.ebp_executable_path)
         self.order_valid_status = [status.strip() for status in self.order_valid_status.split(',')]
+        self.order_refund_status = [status.strip() for status in self.order_refund_status.split(',')]
         self.payment_method_mapping_file_path = Path(self.payment_method_mapping_file_path)
         self.vat_mapping_file_path = Path(self.vat_mapping_file_path)
         self.working_directory = Path(self.working_directory)
