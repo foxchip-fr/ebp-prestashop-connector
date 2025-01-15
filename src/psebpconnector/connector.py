@@ -490,6 +490,8 @@ class Connector:
             self.import_files()
             self.logger.handlers[2].flush()
             self.logger.handlers[2].close()
+            self.logger.debug(f"errors_logged: {self.errors_logged}")
+            self.logger.debug(f"errors_raised_by_ebp: {self.errors_raised_by_ebp}")
             if self.mailer and (self.errors_logged or self.errors_raised_by_ebp):
                 self.mailer.send_mail("PS EBP Connector - Erreurs lors de l'exécution",
                                       "Des erreurs ont été constatées lors de l'exécution du connecteur, consultez les "
