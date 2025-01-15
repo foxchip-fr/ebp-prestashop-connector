@@ -46,6 +46,7 @@ class ConnectorConfiguration:
     o365_email = None
     o365_secret = None
     o365_tenant_id = None
+    o365_recipient = None
 
     def __init__(self, config_path: Path):
         self._read_configuration(config_path)
@@ -84,7 +85,7 @@ class ConnectorConfiguration:
         self.working_directory = Path(self.working_directory)
 
         if self._config.has_section ('o365'):
-            for key in ['client_id', 'email', 'secret', 'tenant_id']:
+            for key in ['client_id', 'email', 'secret', 'tenant_id', 'recipient']:
                 setattr(self, f"o365_{key}", self._config.get('o365', key))
 
         if self._config.has_option('main', 'order_limit'):

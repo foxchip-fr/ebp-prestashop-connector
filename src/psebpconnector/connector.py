@@ -496,7 +496,7 @@ class Connector:
                 self.mailer.send_mail("PS EBP Connector - Erreurs lors de l'exécution",
                                       "Des erreurs ont été constatées lors de l'exécution du connecteur, consultez les "
                                       "journaux en PJ.",
-                                      "contact@guillaumechinal.fr",
+                                      self.config.o365_recipient,
                                       [self._logs_file_path, self._ebp_import_products_logs_path, self._ebp_import_orders_logs_path])
 
             return 0
