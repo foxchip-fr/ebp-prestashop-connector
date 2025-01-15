@@ -140,12 +140,14 @@ class Webservice:
                 result = self._do_api_call(self._build_url('orders_with_printed', {
                     'filter[orders_printed][exported]': '0',
                     'filter[current_state]': '[' + '|'.join(valid_orders_status) + ']',
+                    'sort': '[id_ASC]',
                     'limit': f"{offset},{self._PAGINATION_SIZE}"
                 }))
             elif exporting_refunds:
                 result = self._do_api_call(self._build_url('orders_with_printed', {
                     'filter[orders_printed][exported]': '1',
                     'filter[current_state]': '[' + '|'.join(refund_orders_status) + ']',
+                    'sort': '[id_ASC]',
                     'limit': f"{offset},{self._PAGINATION_SIZE}"
                 }))
             else:
