@@ -268,6 +268,8 @@ class Connector:
         return self.logger.handlers[3].log_emitted
 
     def errors_raised_by_ebp(self):
+        if not self._ebp_import_orders_logs_path.is_file() or not self._ebp_import_products_logs_path.is_file():
+            return True
         return 'erreur' in self._ebp_import_orders_logs_path.read_text().lower() or 'erreur' in self._ebp_import_products_logs_path.read_text().lower()
 
     def export_order_row(self,
@@ -492,15 +494,17 @@ class Connector:
             self.logger.handlers[2].close()
             self.logger.debug(f"errors_logged: {self.errors_logged()}")
             self.logger.debug(f"errors_raised_by_ebp: {self.errors_raised_by_ebp()}")
-            if self.mailer and (self.errors_logged() or self.errors_raised_by_ebp()):
-                self.mailer.send_mail("PS EBP Connector - Erreurs lors de l'exécution",
-                                      "Des erreurs ont été constatées lors de l'exécution du connecteur, consultez les "
-                                      "journaux en PJ.",
-                                      self.config.o365_recipient,
-                                      [self._logs_file_path, self._ebp_import_products_logs_path, self._ebp_import_orders_logs_path])
-
             return 0
         except Exception as e:
             self.logger.critical("A critical error was raised, see below")
             self.logger.exception(e)
             return 1
+
+        finally:
+            if self.mailer and (self.errors_logged() or self.errors_raised_by_ebp()):
+                self.mailer.send_mail("PS EBP Connector - Erreurs lors de l'exécution",
+                                      "Des erreurs ont été constatées lors de l'exécution du connecteur, consultez les "
+                                      "journaux en PJ.",
+                                      self.config.o365_recipient,
+                                      [f for f in [self._logs_file_path, self._ebp_import_products_logs_path,
+                                       self._ebp_import_orders_logs_path] if f.is_file()])
