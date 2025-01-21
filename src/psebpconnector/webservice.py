@@ -51,6 +51,9 @@ class Webservice:
             'Io-Format': 'JSON',
         }
 
+        self.order_error_counter = 0
+        self.refund_error_counter = 0
+
     def _build_credentials(self) -> HTTPBasicAuth:
         return HTTPBasicAuth(self.apikey, '')
 
@@ -134,21 +137,19 @@ class Webservice:
         exporting_regular_orders = True
         exporting_refunds = False
         for i in range(self._MAX_CALLS):
-            offset = i * self._PAGINATION_SIZE
-
             if exporting_regular_orders:
                 result = self._do_api_call(self._build_url('orders_with_printed', {
                     'filter[orders_printed][exported]': '0',
                     'filter[current_state]': '[' + '|'.join(valid_orders_status) + ']',
                     'sort': '[id_ASC]',
-                    'limit': f"{offset},{self._PAGINATION_SIZE}"
+                    'limit': f"{self.order_error_counter},{self.order_error_counter + self._PAGINATION_SIZE}"
                 }))
             elif exporting_refunds:
                 result = self._do_api_call(self._build_url('orders_with_printed', {
                     'filter[orders_printed][exported]': '1',
                     'filter[current_state]': '[' + '|'.join(refund_orders_status) + ']',
                     'sort': '[id_ASC]',
-                    'limit': f"{offset},{self._PAGINATION_SIZE}"
+                    'limit': f"{self.refund_error_counter},{self.refund_error_counter + self._PAGINATION_SIZE}"
                 }))
             else:
                 break

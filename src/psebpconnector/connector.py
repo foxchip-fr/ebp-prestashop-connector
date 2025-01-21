@@ -406,6 +406,10 @@ class Connector:
                 self._process_order(order)
             except InvalidOrder:
                 self.logger.warning(f"Skipping order {order.id}")
+                if order.is_refund:
+                    self.webservice.refund_error_counter += 1
+                else:
+                    self.webservice.order_error_counter += 1
             finally:
                 exported_orders_counter += 1
 
