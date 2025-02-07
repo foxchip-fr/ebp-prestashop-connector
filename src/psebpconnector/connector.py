@@ -213,9 +213,9 @@ class Connector:
 
     def _process_order(self, order):
         self.logger.debug(order)
-        vat_applied = self._check_if_vat_applied(order)
-        ebp_client_code, currency, territoriality, ebp_payment_method = self._get_info_from_payment_method(order, vat_applied)
         delivery_address = self._get_order_delivery_address(order)
+        vat_applied = False if delivery_address.id_country == 21 else self._check_if_vat_applied(order)
+        ebp_client_code, currency, territoriality, ebp_payment_method = self._get_info_from_payment_method(order, vat_applied)
         invoice_address = self._get_order_invoice_address(order)
         vat_value, ebp_vat_id = self._get_order_vat(order, territoriality, delivery_address.id_country, vat_applied)
         order_rows = self._get_order_rows(order)
