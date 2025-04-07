@@ -320,7 +320,7 @@ class Connector:
             document_delivery_fax='',
             document_delivery_email='nomail@nomail.fr',
             document_territoriality=ebp_territoriality,
-            document_vat_number=f"{invoice_address.vat_number}",
+            document_vat_number="" if str(invoice_address.vat_number) == '0' else str(invoice_address.vat_number),
             document_discount_pct=f"{round(float(order.total_discount) / (float(order.total_products_wt) + float(order.total_shipping)), 6):06f}",
             document_discount_amount=f"{order.total_discount}",
             document_escompte_pct='',
