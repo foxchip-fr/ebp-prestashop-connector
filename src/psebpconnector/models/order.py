@@ -52,7 +52,7 @@ class Order(Model):
     payment: str = ''
     reference: str = ''
     shipping_number: str = ''
-    total_discount: float = 0
+    total_discounts: float = 0
     total_paid: float = 0
     total_paid_real: float = 0
     total_products: float = 0
