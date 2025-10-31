@@ -386,9 +386,12 @@ class Connector:
         if product_id not in self.exported_products:
             self.logger.info(f"Exporting product {product_id}")
             product = self.webservice.get_product(product_id)
+            product_name = product.name
+            if isinstance(product_name, list):
+                product_name = product.name[0]['value']
             export_product = ExportProduct(
                 code=product.ean13,
-                name=product.name[0]['value'],
+                name=product_name,
                 type='BIEN',
                 price=f"{float(product.price):06f}",
                 wholesale_price=f"{float(product.wholesale_price):06f}",
