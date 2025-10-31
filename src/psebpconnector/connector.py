@@ -360,7 +360,7 @@ class Connector:
             document_currency_amount=f"{round(float(order.total_products_wt) + float(order.total_shipping), 6):06f}" if float(order.conversion_rate) != 1.0 else '',
             document_currency_amount_notax='',
             document_currency_amount_shipping_notax=f"{round(float(order.total_shipping) / (1 + vat_rate), 6):06f}" if float(order.conversion_rate) != 1.0 else '',
-            line_currency_unit_price_notax=f"{round(float(order_row.product_price) / (1 + vat_rate), 6):06f}" if float(order.conversion_rate) != 1.0 else '',
+            line_currency_unit_price_notax=f"{round(float(order_row.product_price), 6):06f}" if float(order.conversion_rate) != 1.0 else '',
             line_currency_cumulative_discount_amount_notax='',
             line_currency_total_notax='',
             document_currency_used='T' if float(order.conversion_rate) != 1.0 else 'P',
