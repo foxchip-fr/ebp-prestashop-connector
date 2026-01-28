@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='psebpconnector',
-    version='0.0.1',
+    version='1.0.6',
     url='https://github.com/foxchip-fr/ebp-prestashop-connector',
     author='Guillaume Chinal',
     author_email='contact@guillaumechinal.fr',
