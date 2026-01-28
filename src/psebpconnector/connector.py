@@ -525,5 +525,13 @@ class Connector:
                                       "Des erreurs ont été constatées lors de l'exécution du connecteur, consultez les "
                                       "journaux en PJ.",
                                       self.config.o365_recipient,
-                                      [f for f in [self._logs_file_path, self._ebp_import_products_logs_path,
-                                       self._ebp_import_orders_logs_path] if f.is_file()])
+                                      [
+                                          f for f in [
+                                            self._logs_file_path,
+                                            self._ebp_import_products_logs_path,
+                                            self._ebp_import_orders_logs_path,
+                                            self._csv_products_path,
+                                            self._csv_orders_path
+                                          ]
+                                          if f.is_file()
+                                      ])
