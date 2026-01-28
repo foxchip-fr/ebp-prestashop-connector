@@ -54,3 +54,18 @@ def test_ebp_order_import_ok(offline_connector, logfile):
 def test_ebp_order_import_ok(offline_connector, logfile):
     offline_connector._ebp_import_orders_logs_path = offline_connector._ebp_import_products_logs_path = (Path('tests/samples/logs') / logfile)
     assert offline_connector.errors_raised_by_ebp()
+
+@pytest.mark.parametrize("logfile", ["ebp_malformed_message_1.txt"])
+def test_ebp_ebp_malformed_message_1(offline_connector, logfile):
+    offline_connector._ebp_import_orders_logs_path = offline_connector._ebp_import_products_logs_path = (Path('tests/samples/logs') / logfile)
+    assert not offline_connector.errors_raised_by_ebp()
+
+@pytest.mark.parametrize("logfile", ["ebp_malformed_message_2.txt"])
+def test_ebp_ebp_malformed_message_2(offline_connector, logfile):
+    offline_connector._ebp_import_orders_logs_path = offline_connector._ebp_import_products_logs_path = (Path('tests/samples/logs') / logfile)
+    assert not offline_connector.errors_raised_by_ebp()
+
+@pytest.mark.parametrize("logfile", ["ebp_malformed_message_3.txt"])
+def test_ebp_ebp_malformed_message_3(offline_connector, logfile):
+    offline_connector._ebp_import_orders_logs_path = offline_connector._ebp_import_products_logs_path = (Path('tests/samples/logs') / logfile)
+    assert offline_connector.errors_raised_by_ebp()

@@ -25,6 +25,7 @@ SOFTWARE.
 
 import csv
 import logging
+import re
 import subprocess
 import sys
 import time
@@ -264,13 +265,24 @@ class Connector:
     def check_consistency(self):
         self._check_territoriality_consistency()
 
+    @staticmethod
+    def check_ebp_records_imported(log: str) -> bool:
+        result = re.search(r'(\d+)/(\d+)', log)
+
+        # Let's say empty log is okay
+        if not result:
+            return True
+
+        return int(result.group(1)) == int(result.group(2))
+
     def errors_logged(self):
         return self.logger.handlers[3].log_emitted
 
     def errors_raised_by_ebp(self):
         if not self._ebp_import_orders_logs_path.is_file() or not self._ebp_import_products_logs_path.is_file():
             return True
-        return 'erreur' in self._ebp_import_orders_logs_path.read_text().lower() or 'erreur' in self._ebp_import_products_logs_path.read_text().lower()
+        return not (self.check_ebp_records_imported(self._ebp_import_orders_logs_path.read_text().lower()) and
+                self.check_ebp_records_imported(self._ebp_import_products_logs_path.read_text().lower()))
 
     def export_order_row(self,
                          order: Order,
