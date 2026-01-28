@@ -24,6 +24,9 @@ SOFTWARE.
 
 from psebpconnector.models import *
 
+import copy
+
+
 ADDRESSES = {
     'fr': Address(id=123456,
         id_customer=123456,
@@ -41,6 +44,29 @@ ADDRESSES = {
         address2='',
         postcode='',
         city='N/A',
+        other='',
+        phone='',
+        phone_mobile='',
+        dni='0000000000',
+        deleted=0,
+        date_add='2024-09-25 14:18:37',
+        date_upd='2024-09-25 14:18:37'),
+    'fr_semicolon': Address(id=123456,
+        id_customer=123456,
+        id_manufacturer=123,
+        id_supplier=0,
+        id_warehouse=0,
+        id_country=8,
+        id_state=0,
+        alias='RockPOS',
+        company='',
+        lastname='Dup;ont',
+        firstname='J;ean',
+        vat_number=0,
+        address1='1 ; Chemin',
+        address2='de ; la ;;;ferme',
+        postcode='12;345',
+        city='VI;LLE;',
         other='',
         phone='',
         phone_mobile='',
@@ -271,3 +297,7 @@ SINGLE_ORDER_WITH_UNKNOWN_PAYMENT_METHOD = [
         total_shipping_tax_excl='6.250000',
     )
 ]
+
+ORDER_WITH_SPECIAL_CHAR_IN_ADDRESS = [copy.deepcopy(SINGLE_ORDER_FR_ONE_PRODUCT[0])]
+ORDER_WITH_SPECIAL_CHAR_IN_ADDRESS[0].id_address_delivery = 'fr_semicolon'
+ORDER_WITH_SPECIAL_CHAR_IN_ADDRESS[0].id_address_invoice = 'fr_semicolon'

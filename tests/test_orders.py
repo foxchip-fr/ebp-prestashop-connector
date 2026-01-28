@@ -176,3 +176,27 @@ def test_orders_nolimit(offline_connector, mocker):
     assert connector.run() == 0
     assert len(EXPORTED_ORDERS) == 3
 
+def test_orders_semicolon(offline_connector, mocker):
+    global EXPORTED_ORDERS
+    EXPORTED_ORDERS = []
+
+    connector = Connector(Path(__file__).parent / 'samples/config/config_file_ok.ini')
+    mocker.patch("psebpconnector.webservice.Webservice.get_orders_to_export",
+                 return_value=ORDER_WITH_SPECIAL_CHAR_IN_ADDRESS)
+    mocker.patch('psebpconnector.connector.Connector._write_csv_line', new=_fake_write_csv_line)
+
+    assert offline_connector.run() == 0
+    assert len(EXPORTED_ORDERS) == 1
+    order = EXPORTED_ORDERS[0]
+    assert order.document_client_name == "DUPONT JEAN"
+    assert order.document_invoice_address_1 == "1  Chemin"
+    assert order.document_invoice_address_2 == "de  la ferme"
+    assert order.document_invoice_zip_code == "12345"
+    assert order.document_invoice_city == "VILLE"
+    assert order.document_invoice_lastname == "DUPONT"
+    assert order.document_invoice_firstname == "JEAN"
+    assert order.document_delivery_address_1 == "1  Chemin"
+    assert order.document_delivery_address_2 == "de  la ferme"
+    assert order.document_delivery_city == "VILLE"
+    assert order.document_delivery_lastname == "DUPONT"
+    assert order.document_delivery_firstname == "JEAN"
