@@ -98,7 +98,7 @@ class Webservice:
             'filter[active]': '1',
             'display': '[id,iso_code]',
         }))
-        return {country['id']: country['iso_code'] for country in result.json()['countries']}
+        return {str(country['id']): country['iso_code'] for country in result.json()['countries']}
 
     def get_currencies_iso_code(self) -> Dict[int, str]:
         result = self._do_api_call(self._build_url('currencies', {

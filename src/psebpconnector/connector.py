@@ -121,10 +121,10 @@ class Connector:
         return total * (1 + vat_value)
 
     def _get_country_iso_code(self, country_id):
-        if country_id not in self.countries_iso_code:
+        if str(country_id) not in self.countries_iso_code:
             self.logger.error(f"Unable to find country iso code for country_id {country_id}")
             raise InvalidOrder
-        return self.countries_iso_code[country_id]
+        return self.countries_iso_code[str(country_id)]
 
     def _get_currency_iso_code(self, currency_id):
         if currency_id not in self.currencies_iso_code:
