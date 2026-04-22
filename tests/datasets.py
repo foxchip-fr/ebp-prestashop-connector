@@ -77,7 +77,7 @@ ADDRESSES = {
 }
 
 COUNTRIES = {
-    '8': 'FR'
+    8: 'FR'
 }
 
 CURRENCIES = {
