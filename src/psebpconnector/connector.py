@@ -121,6 +121,7 @@ class Connector:
         return total * (1 + vat_value)
 
     def _get_country_iso_code(self, country_id):
+        country_id = int(country_id)
         if country_id not in self.countries_iso_code:
             self.logger.error(f"Unable to find country iso code for country_id {country_id}")
             raise InvalidOrder
@@ -192,6 +193,7 @@ class Connector:
             :param territoriality: territoriality guessed from payment method
             :param ps_country_id: Prestashop country ID of the delivery address
         """
+        ps_country_id = int(ps_country_id)
         if territoriality not in self.vat_mapping:
             self.logger.error(f"Order {order.id}: territoriality '{territoriality}' not found in VAT mapping file")
             raise InvalidOrder
@@ -489,7 +491,7 @@ class Connector:
                     # EXONERATION
                     vat = float(vat.replace(',','.')) / 100
 
-                    self.vat_mapping[territoriality][ps_country_id] = (vat, ebp_id)
+                    self.vat_mapping[territoriality][int(ps_country_id)] = (vat, ebp_id)
                 line_number += 1
 
     def run(self) -> int:
