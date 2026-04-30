@@ -33,3 +33,10 @@ class Product(Model):
     name: str = ''
     description: str = ''
     wholesale_price: str = ''
+
+    def __post_init__(self):
+        for field in ["id"]:
+            v = getattr(self, field)
+            if v == "":
+                v = 0
+            setattr(self, field, int(v))

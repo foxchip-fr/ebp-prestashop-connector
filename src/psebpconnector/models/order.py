@@ -60,3 +60,10 @@ class Order(Model):
     total_shipping: float = 0
     total_shipping_tax_incl: float = 0
     total_shipping_tax_excl: float = 0
+
+    def __post_init__(self):
+        for field in ["id", "id_address_delivery", "id_address_invoice", "id_currency", "id_lang", "id_customer"]:
+            v = getattr(self, field)
+            if v == "":
+                v = 0
+            setattr(self, field, int(v))

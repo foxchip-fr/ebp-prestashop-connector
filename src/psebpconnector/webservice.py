@@ -105,7 +105,7 @@ class Webservice:
             'filter[active]': '1',
             'display': '[id,iso_code]',
         }))
-        return {currency['id']: currency['iso_code'] for currency in result.json()['currencies']}
+        return {int(currency['id']): currency['iso_code'] for currency in result.json()['currencies']}
 
     def get_order(self, order_id: int) -> Order:
         """

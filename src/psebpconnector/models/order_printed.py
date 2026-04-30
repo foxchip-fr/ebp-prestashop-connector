@@ -34,3 +34,10 @@ class OrderPrinted:
     exported: int = 0
     printed_date: Optional[str] = None
     exported_date: Optional[str] = None
+
+    def __post_init__(self):
+        for field in ["id", "id_order", "printed", "exported"]:
+            v = getattr(self, field)
+            if v == "":
+                v = 0
+            setattr(self, field, int(v))
