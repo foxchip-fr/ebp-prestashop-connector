@@ -28,7 +28,7 @@ import copy
 
 
 ADDRESSES = {
-    'fr': Address(id=123456,
+    1: Address(id=123456,
         id_customer=123456,
         id_manufacturer=123,
         id_supplier=0,
@@ -51,7 +51,7 @@ ADDRESSES = {
         deleted=0,
         date_add='2024-09-25 14:18:37',
         date_upd='2024-09-25 14:18:37'),
-    'fr_semicolon': Address(id=123456,
+    2: Address(id=123456,
         id_customer=123456,
         id_manufacturer=123,
         id_supplier=0,
@@ -113,8 +113,8 @@ PRODUCTS = {
 SINGLE_ORDER_REFUND = [
     Order(
         id=123456,
-        id_address_delivery='fr',
-        id_address_invoice='fr',
+        id_address_delivery='1',
+        id_address_invoice='1',
         conversion_rate='1.000000',
         payment='FNAC Marketplace - FR',
         total_discounts=0,
@@ -146,8 +146,8 @@ SINGLE_ORDER_REFUND = [
 SINGLE_ORDER_FR_ONE_PRODUCT = [
     Order(
         id=123456,
-        id_address_delivery='fr',
-        id_address_invoice='fr',
+        id_address_delivery=1,
+        id_address_invoice='1',
         conversion_rate='1.000000',
         payment='Ebay - FR - Creditcard',
         total_discounts=0,
@@ -178,8 +178,8 @@ SINGLE_ORDER_FR_ONE_PRODUCT = [
 SINGLE_ORDER_WITH_TWO_PRODUCTS_BAD_AMOUNT = [
     Order(
         id=123456,
-        id_address_delivery='fr',
-        id_address_invoice='fr',
+        id_address_delivery=1,
+        id_address_invoice='1',
         id_cart=123456,
         id_currency=1,
         id_lang=1,
@@ -240,7 +240,7 @@ SINGLE_ORDER_WITH_TWO_PRODUCTS_BAD_AMOUNT = [
 SINGLE_ORDER_WITH_UNKNOWN_PAYMENT_METHOD = [
     Order(
         id=123456,
-        id_address_delivery='fr',
+        id_address_delivery='1',
         id_address_invoice=123456,
         id_cart=123456,
         id_currency=1,
@@ -299,5 +299,5 @@ SINGLE_ORDER_WITH_UNKNOWN_PAYMENT_METHOD = [
 ]
 
 ORDER_WITH_SPECIAL_CHAR_IN_ADDRESS = [copy.deepcopy(SINGLE_ORDER_FR_ONE_PRODUCT[0])]
-ORDER_WITH_SPECIAL_CHAR_IN_ADDRESS[0].id_address_delivery = 'fr_semicolon'
-ORDER_WITH_SPECIAL_CHAR_IN_ADDRESS[0].id_address_invoice = 'fr_semicolon'
+ORDER_WITH_SPECIAL_CHAR_IN_ADDRESS[0].id_address_delivery = 2
+ORDER_WITH_SPECIAL_CHAR_IN_ADDRESS[0].id_address_invoice = 2
