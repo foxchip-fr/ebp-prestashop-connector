@@ -335,7 +335,7 @@ class Connector:
             document_delivery_email='nomail@nomail.fr',
             document_territoriality=ebp_territoriality,
             document_vat_number="" if str(invoice_address.vat_number) == '0' else str(invoice_address.vat_number),
-            document_discount_pct=f"{round(float(order.total_discounts) / (float(order.total_products_wt) + float(order.total_shipping)), 6):06f}",
+            document_discount_pct=f"{round(float(order.total_discounts) / float(order.total_products_wt) * 100, 6):06f}",
             document_discount_amount=f"{order.total_discounts}",
             document_escompte_pct='',
             document_escompte_amount='',
@@ -344,7 +344,7 @@ class Connector:
             document_shipping_cost_vat_rate=f"{round(vat_rate * 100, 6)}",
             document_shipping_tva_code=f"{ebp_vat_id}",
             document_total_notax='',
-            document_total=f"{round((float(order.total_products_wt) + float(order.total_shipping)), 6):06f}",
+            document_total='' if float(order.total_discounts) > 0 else f"{round((float(order.total_products_wt) + float(order.total_shipping)), 6):06f}",
             document_notes=f"Commande importée n°{order.id} - {order.reference}",
             line_product_code=f"{order_row.product_ean13}",
             line_description=f"{order_row.product_name}",
@@ -386,9 +386,12 @@ class Connector:
             line_ignore_linked_products='',
             document_language='')
         if order.is_refund:
-            export_order_row.document_total = f"-{export_order_row.document_total}"
+            if export_order_row.document_total:
+                export_order_row.document_total = f"-{export_order_row.document_total}"
             export_order_row.line_quantity = f"-{export_order_row.line_quantity}"
             export_order_row.document_shipping_cost_notax = f"-{export_order_row.document_shipping_cost_notax}"
+            if export_order_row.document_currency_amount:
+                export_order_row.document_currency_amount = f"-{export_order_row.document_currency_amount}"
             if export_order_row.document_currency_amount_shipping_notax:
                 export_order_row.document_currency_amount_shipping_notax = f"-{export_order_row.document_currency_amount_shipping_notax}"
             export_order_row.document_number_suffix += "11"
