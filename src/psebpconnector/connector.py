@@ -67,6 +67,7 @@ class Connector:
         self._csv_orders_file = open(self._csv_orders_path, 'w', encoding='utf-8-sig', newline='')
         self.csv_orders = csv.writer(self._csv_orders_file, delimiter=';', quotechar='"')
         self.exported_products = set()
+        self.pending_orders = []
         self.webservice = Webservice(self.config.url, self.config.apikey)
         self._ebp_import_products_logs_path = self.config.working_directory / f"ebp_import_products_logs_{self._startup_time}.txt"
         self._ebp_import_orders_logs_path = self.config.working_directory / f"ebp_import_orders_logs_{self._startup_time}.txt"
@@ -226,10 +227,9 @@ class Connector:
             self.export_product(order_row.product_id)
             self.export_order_row(order, order_row, delivery_address, invoice_address, ebp_vat_id,
                                   ebp_client_code, ebp_payment_method, territoriality, vat_value)
-            if order.is_refund:
-                self.webservice.set_order_refund(order)
-            else:
-                self.webservice.set_order_exported(order)
+        # Ne PAS marquer exported ici : on attend la confirmation de l'import EBP
+        # (cf. mark_exported_orders) pour ne pas perdre une commande rejetee par EBP.
+        self.pending_orders.append(order)
 
     def _setup_logger(self):
         logger = logging.getLogger('ps_ebp_connector')
@@ -334,7 +334,7 @@ class Connector:
             document_delivery_fax='',
             document_delivery_email='nomail@nomail.fr',
             document_territoriality=ebp_territoriality,
-            document_vat_number="" if str(invoice_address.vat_number) == '0' else str(invoice_address.vat_number),
+            document_vat_number="" if str(invoice_address.vat_number) == '0' else str(invoice_address.vat_number).replace(' ', '').upper(),
             document_discount_pct=f"{round(float(order.total_discounts) / float(order.total_products_wt) * 100, 6):06f}",
             document_discount_amount=f"{order.total_discounts}",
             document_escompte_pct='',
@@ -459,6 +459,29 @@ class Connector:
         self.logger.debug(f"Subprocess args: {import_orders_command}")
         subprocess.run(import_orders_command)
 
+    def mark_exported_orders(self):
+        """ Marque les commandes comme exportees dans PrestaShop UNIQUEMENT pour les documents
+            reellement importes par EBP. Les commandes rejetees par EBP (ou si le log d'import est
+            absent/illisible) sont laissees a exported=0 pour etre rejouees au prochain run plutot
+            que perdues silencieusement. """
+        if not self._ebp_import_orders_logs_path.is_file():
+            self.logger.error("Log d'import EBP absent : aucune commande marquee exportee (rejeu au prochain run)")
+            return
+        log = self._ebp_import_orders_logs_path.read_text(encoding='utf-8', errors='ignore')
+        if not re.search(r'\d+/\d+', log):
+            self.logger.error("Log d'import EBP incomplet : aucune commande marquee exportee (rejeu au prochain run)")
+            return
+        rejected = set(re.findall(r'Le document (\d+) ne sera pas import', log))
+        for order in self.pending_orders:
+            document_number = f"{order.id}11" if order.is_refund else f"{order.id}"
+            if document_number in rejected:
+                self.logger.warning(f"Order {order.id}: rejetee par EBP (document {document_number}), "
+                                    f"laissee a exported=0 pour rejeu")
+            elif order.is_refund:
+                self.webservice.set_order_refund(order)
+            else:
+                self.webservice.set_order_exported(order)
+
     def load_payment_method_mapping(self):
         with open(self.config.payment_method_mapping_file_path, 'r') as f:
             reader = csv.reader(f, delimiter=';')
@@ -514,6 +537,7 @@ class Connector:
             self.logger.info("Starting orders retrieving")
             self.export_orders_and_products()
             self.import_files()
+            self.mark_exported_orders()
             self.logger.handlers[2].flush()
             self.logger.handlers[2].close()
             self.logger.debug(f"errors_logged: {self.errors_logged()}")
