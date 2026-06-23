@@ -134,39 +134,31 @@ class Webservice:
         :return: A generator yielding orders that need to be exported
         """
 
-        exporting_regular_orders = True
-        exporting_refunds = False
-        for i in range(self._MAX_CALLS):
-            if exporting_regular_orders:
+        for refund_phase, statuses, exported_value in (
+                (False, valid_orders_status, '0'),
+                (True, refund_orders_status, '1')):
+            # Offset REEL : on avance du nombre de commandes deja lues. Ne PAS se baser
+            # sur le filtre exported pour faire avancer la fenetre : le marquage est
+            # differe apres l'import EBP (cf. Connector.mark_exported_orders), donc le
+            # filtre ne bouge pas pendant le run. Un offset fige -> memes commandes
+            # re-servies en boucle -> doublons / produits x N en EBP.
+            offset = 0
+            for _ in range(self._MAX_CALLS):
                 result = self._do_api_call(self._build_url('orders_with_printed', {
-                    'filter[orders_printed][exported]': '0',
-                    'filter[current_state]': '[' + '|'.join(valid_orders_status) + ']',
+                    'filter[orders_printed][exported]': exported_value,
+                    'filter[current_state]': '[' + '|'.join(statuses) + ']',
                     'sort': '[id_ASC]',
-                    'limit': f"{self.order_error_counter},{self.order_error_counter + self._PAGINATION_SIZE}"
+                    'limit': f"{offset},{self._PAGINATION_SIZE}"
                 }))
-            elif exporting_refunds:
-                result = self._do_api_call(self._build_url('orders_with_printed', {
-                    'filter[orders_printed][exported]': '1',
-                    'filter[current_state]': '[' + '|'.join(refund_orders_status) + ']',
-                    'sort': '[id_ASC]',
-                    'limit': f"{self.refund_error_counter},{self.refund_error_counter + self._PAGINATION_SIZE}"
-                }))
-            else:
-                break
-
-            orders_list = result.json()
-
-            if orders_list:
-                for order_entry in result.json()['orders']:
+                orders_list = result.json()
+                if not orders_list or not orders_list.get('orders'):
+                    break
+                orders = orders_list['orders']
+                for order_entry in orders:
                     order = self.get_order(order_entry['id'])
-                    order.is_refund = exporting_refunds
+                    order.is_refund = refund_phase
                     yield order
-            else:
-                if exporting_regular_orders:
-                    exporting_regular_orders = False
-                    exporting_refunds = True
-                else:
-                    exporting_refunds = False
+                offset += len(orders)
 
 
     def get_product(self, product_id: int):

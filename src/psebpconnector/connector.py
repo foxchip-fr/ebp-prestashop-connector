@@ -419,7 +419,13 @@ class Connector:
 
     def export_orders_and_products(self):
         exported_orders_counter = 0
+        seen = set()
         for order in self.webservice.get_orders_to_export(self.config.order_valid_status, self.config.order_refund_status):
+            key = (order.id, order.is_refund)
+            if key in seen:
+                self.logger.warning(f"Order {order.id}: deja traitee dans ce run, ignoree (anti-doublon)")
+                continue
+            seen.add(key)
             if self.config.order_limit and exported_orders_counter >= self.config.order_limit:
                 break
             try:
