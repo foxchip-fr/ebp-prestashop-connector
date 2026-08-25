@@ -335,7 +335,7 @@ class Connector:
             document_delivery_email='nomail@nomail.fr',
             document_territoriality=ebp_territoriality,
             document_vat_number="" if str(invoice_address.vat_number) == '0' else str(invoice_address.vat_number).replace(' ', '').upper(),
-            document_discount_pct=f"{round(float(order.total_discounts) / float(order.total_products_wt) * 100, 6):06f}",
+            document_discount_pct=f"{round(float(order.total_discounts) / float(order.total_products_wt) * 100, 6):06f}" if float(order.total_products_wt) else '0.000000',
             document_discount_amount=f"{order.total_discounts}",
             document_escompte_pct='',
             document_escompte_amount='',
@@ -432,6 +432,14 @@ class Connector:
                 self._process_order(order)
             except InvalidOrder:
                 self.logger.warning(f"Skipping order {order.id}")
+                if order.is_refund:
+                    self.webservice.refund_error_counter += 1
+                else:
+                    self.webservice.order_error_counter += 1
+            except Exception as e:
+                # Filet: une exception inattendue sur UNE commande ne doit JAMAIS tuer tout
+                # le run (sinon plus aucune commande importee). On logge, on skippe, on continue.
+                self.logger.error(f"Order {order.id}: erreur inattendue, commande ignoree (le run continue) - {e}")
                 if order.is_refund:
                     self.webservice.refund_error_counter += 1
                 else:
