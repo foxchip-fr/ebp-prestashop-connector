@@ -23,6 +23,9 @@ SOFTWARE.
 """
 
 
+import time
+
+import requests
 from datetime import datetime
 from psebpconnector.exceptions import BadHTTPCode
 from psebpconnector.models import *
@@ -35,6 +38,9 @@ from urllib.parse import urlencode
 class Webservice:
     _PAGINATION_SIZE = 10
     _MAX_CALLS = 1000
+    _MAX_RETRIES = 6
+    _RETRY_STATUS = {429, 500, 502, 503, 504}
+    _TIMEOUT = 30
 
     def __init__(self, url: str, apikey: str):
         """
@@ -68,12 +74,32 @@ class Webservice:
                      expected_result_codes: List[int] = [200],
                      method: str = 'get',
                      data: Optional[dict] = None) -> Response:
-        result = getattr(self._session, method)(url, data=data)
+        for attempt in range(self._MAX_RETRIES):
+            try:
+                result = getattr(self._session, method)(url, data=data, timeout=self._TIMEOUT)
+            except requests.exceptions.RequestException as e:
+                # timeout / erreur reseau transitoire : backoff puis retry
+                if attempt < self._MAX_RETRIES - 1:
+                    time.sleep(min(2 ** attempt, 30))
+                    continue
+                raise BadHTTPCode(f"{method.upper()} {url}: {e}")
 
-        if result.status_code not in expected_result_codes:
+            if result.status_code in expected_result_codes:
+                return result
+
+            # 429 (rate limit) / 5xx transitoire : on respecte Retry-After sinon backoff exponentiel, puis retry
+            if result.status_code in self._RETRY_STATUS and attempt < self._MAX_RETRIES - 1:
+                retry_after = result.headers.get('Retry-After')
+                try:
+                    wait = int(retry_after) if retry_after else min(2 ** attempt, 30)
+                except (TypeError, ValueError):
+                    wait = min(2 ** attempt, 30)
+                time.sleep(wait)
+                continue
+
             raise BadHTTPCode(f"{method.upper()} {url}: Bad HTTP status code {result.status_code}\n{result.text}")
 
-        return result
+        raise BadHTTPCode(f"{method.upper()} {url}: echec apres {self._MAX_RETRIES} tentatives")
 
     def _set_order_exported_field(self, order: Order, field_value: int):
         order_printed = self.get_order_printed(order.id)
