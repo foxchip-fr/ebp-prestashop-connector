@@ -62,11 +62,13 @@ EXPECTED_RESULTS = [
     ),
     (
         # Should export only one product
-        SINGLE_ORDER_FR_ONE_PRODUCT*2,
+        # (deux commandes DISTINCTES partageant le meme produit : le produit ne doit etre exporte
+        #  qu'une fois. Repeter la MEME commande ne conviendrait pas, le connecteur la dedoublonne.)
+        TWO_DISTINCT_ORDERS_SAME_PRODUCT,
         (
             [{
-                'document_number': '123456',
-                'document_number_suffix': '123456',
+                'document_number': '200000',
+                'document_number_suffix': '200000',
                 'document_use_original_number': 'N',
                 'line_quantity': '1',
                 'line_vat_rate': '20.000000',
@@ -74,7 +76,17 @@ EXPECTED_RESULTS = [
                 'document_payment_method': 'PAYPAL',
                 'document_currency_rate': '',
                 'line_vat_code': '36cab0de-3e5b-4bee-a556-8eabb1673e76'
-            }]*2,
+            }, {
+                'document_number': '200001',
+                'document_number_suffix': '200001',
+                'document_use_original_number': 'N',
+                'line_quantity': '1',
+                'line_vat_rate': '20.000000',
+                'line_unit_price': '39.000000',
+                'document_payment_method': 'PAYPAL',
+                'document_currency_rate': '',
+                'line_vat_code': '36cab0de-3e5b-4bee-a556-8eabb1673e76'
+            }],
             [{
                 'code': '1111111111111',
                 'name': 'Product 1',
@@ -161,7 +173,7 @@ def test_orders_limit(offline_connector, mocker):
     EXPORTED_ORDERS = []
 
     connector = Connector(Path(__file__).parent / 'samples/config/config_file_ok_limit_1.ini')
-    mocker.patch("psebpconnector.webservice.Webservice.get_orders_to_export", return_value=SINGLE_ORDER_FR_ONE_PRODUCT*3)
+    mocker.patch("psebpconnector.webservice.Webservice.get_orders_to_export", return_value=THREE_DISTINCT_ORDERS)
     mocker.patch('psebpconnector.connector.Connector._write_csv_line', new=_fake_write_csv_line)
     assert connector.run() == 0
     assert len(EXPORTED_ORDERS) == 1
@@ -171,7 +183,7 @@ def test_orders_nolimit(offline_connector, mocker):
     EXPORTED_ORDERS = []
 
     connector = Connector(Path(__file__).parent / 'samples/config/config_file_ok.ini')
-    mocker.patch("psebpconnector.webservice.Webservice.get_orders_to_export", return_value=SINGLE_ORDER_FR_ONE_PRODUCT*3)
+    mocker.patch("psebpconnector.webservice.Webservice.get_orders_to_export", return_value=THREE_DISTINCT_ORDERS)
     mocker.patch('psebpconnector.connector.Connector._write_csv_line', new=_fake_write_csv_line)
     assert connector.run() == 0
     assert len(EXPORTED_ORDERS) == 3

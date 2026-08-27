@@ -175,6 +175,22 @@ SINGLE_ORDER_FR_ONE_PRODUCT = [
     )
 ]
 
+def distinct_orders(count, start_id=200000):
+    """ N commandes DISTINCTES (memes produits/adresses, ids differents).
+        Le connecteur dedoublonne les commandes deja traitees dans un run : rejouer la MEME
+        commande plusieurs fois ne produit qu'une ligne. Les jeux de test qui veulent plusieurs
+        commandes doivent donc utiliser des ids differents. """
+    orders = []
+    for i in range(count):
+        order = copy.deepcopy(SINGLE_ORDER_FR_ONE_PRODUCT[0])
+        order.id = start_id + i
+        orders.append(order)
+    return orders
+
+
+TWO_DISTINCT_ORDERS_SAME_PRODUCT = distinct_orders(2)
+THREE_DISTINCT_ORDERS = distinct_orders(3)
+
 SINGLE_ORDER_WITH_TWO_PRODUCTS_BAD_AMOUNT = [
     Order(
         id=123456,
