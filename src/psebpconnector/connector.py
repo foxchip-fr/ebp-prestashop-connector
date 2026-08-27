@@ -571,6 +571,12 @@ class Connector:
             reellement importes par EBP. Les commandes rejetees par EBP (ou si le log d'import est
             absent/illisible) sont laissees a exported=0 pour etre rejouees au prochain run plutot
             que perdues silencieusement. """
+        if not self.pending_orders:
+            # Rien n'a ete exporte : EBP importe logiquement 0/0, ce n'est PAS une erreur.
+            # Sans ce retour anticipe, chaque run "rien a facturer" (nuits, week-ends) loggait une
+            # erreur et declenchait un mail d'alerte, ce qui noyait les vraies alertes.
+            self.logger.info("Aucune commande a exporter : rien a marquer.")
+            return
         if self.ebp_orders_returncode is None:
             self.logger.error("Import EBP interrompu (delai depasse ou EBP n'a pas pu demarrer) : aucune commande "
                               "marquee exportee (rejeu au prochain run)")
