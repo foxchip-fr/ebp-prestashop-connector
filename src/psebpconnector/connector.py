@@ -267,6 +267,19 @@ class Connector:
     def check_consistency(self):
         self._check_territoriality_consistency()
 
+    # Compteur d'enregistrements EBP : "12/12 enregistrements ont ete importes".
+    # On ancre sur le mot "enregistrement" pour ne PAS confondre avec une date (26/08/2026)
+    # presente dans un message d'erreur (base verrouillee, etc.).
+    _EBP_RECORDS_RE = re.compile(r'(\d+)\s*/\s*(\d+)\s+enregistrement', re.IGNORECASE)
+
+    @classmethod
+    def _parse_ebp_imported_records(cls, log: str):
+        """ Retourne (importes, total) d'apres le compteur EBP, ou None si absent du log. """
+        result = cls._EBP_RECORDS_RE.search(log)
+        if not result:
+            return None
+        return int(result.group(1)), int(result.group(2))
+
     @staticmethod
     def check_ebp_records_imported(log: str) -> bool:
         result = re.search(r'(\d+)/(\d+)', log)
@@ -283,8 +296,15 @@ class Connector:
     def errors_raised_by_ebp(self):
         if not self._ebp_import_orders_logs_path.is_file() or not self._ebp_import_products_logs_path.is_file():
             return True
-        return not (self.check_ebp_records_imported(self._ebp_import_orders_logs_path.read_text().lower()) and
-                self.check_ebp_records_imported(self._ebp_import_products_logs_path.read_text().lower()))
+        orders_log = self._ebp_import_orders_logs_path.read_text().lower()
+        products_log = self._ebp_import_products_logs_path.read_text().lower()
+        # EBP a explicitement signale une erreur (base verrouillee par un autre utilisateur, base non
+        # ouverte, document rejete...) : dans ce cas il n'y a parfois AUCUN compteur d'enregistrements
+        # dans le log, il faut donc alerter sur le marqueur d'erreur lui-meme.
+        if '--erreur--' in orders_log or '--erreur--' in products_log:
+            return True
+        return not (self.check_ebp_records_imported(orders_log) and
+                self.check_ebp_records_imported(products_log))
 
     def export_order_row(self,
                          order: Order,
@@ -482,8 +502,27 @@ class Connector:
             self.logger.error("Log d'import EBP absent : aucune commande marquee exportee (rejeu au prochain run)")
             return
         log = self._ebp_import_orders_logs_path.read_text(encoding='utf-8', errors='ignore')
-        if not re.search(r'\d+/\d+', log):
-            self.logger.error("Log d'import EBP incomplet : aucune commande marquee exportee (rejeu au prochain run)")
+        # ATTENTION : ne PAS chercher un simple r'\d+/\d+' ici, une DATE dans un message d'erreur
+        # (ex. "verrouillee ... par ADM depuis le 26/08/2026") matcherait et ferait croire a un
+        # import reussi -> toutes les commandes marquees exportees SANS facture EBP.
+        # On exige le vrai compteur d'enregistrements EBP.
+        has_error_marker = '--erreur--' in log.lower()
+        imported = self._parse_ebp_imported_records(log)
+        if imported is None and not has_error_marker:
+            # Pas de compteur ancre mais AUCUNE erreur EBP signalee (log tronque, libelle different
+            # apres montee de version...) : on accepte un ratio brut, sinon un import reussi ne serait
+            # jamais marque et serait re-importe au run suivant => doublons de factures.
+            loose = re.search(r'(\d+)\s*/\s*(\d+)', log)
+            if loose:
+                imported = (int(loose.group(1)), int(loose.group(2)))
+        if imported is None:
+            self.logger.error("Log d'import EBP sans compteur d'enregistrements exploitable (base verrouillee, EBP non "
+                              "demarre, log tronque...) : aucune commande marquee exportee (rejeu au prochain run)")
+            return
+        done, total = imported
+        if done == 0:
+            self.logger.error(f"Import EBP totalement en echec ({done}/{total}) : aucune commande marquee exportee "
+                              f"(rejeu au prochain run)")
             return
         rejected = set(re.findall(r'Le document (\d+) ne sera pas import', log))
         for order in self.pending_orders:
