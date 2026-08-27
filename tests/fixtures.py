@@ -40,6 +40,20 @@ def get_countries_iso_code():
 def get_currencies_iso_code():
     return CURRENCIES
 
+def fake_import_files(self):
+    """ Remplace l'appel a EBP dans les tests en simulant un import REUSSI.
+        Necessaire depuis que le marquage des commandes (mark_exported_orders) exige une preuve
+        que l'import EBP a bien eu lieu : sans ce simulacre, chaque run de test loggerait une
+        erreur "import EBP non confirme". """
+    self._csv_products_file.close()
+    self._csv_orders_file.close()
+    imported = "Import\n\t{n}/{n} enregistrements ont ete importes :\n".format(n=len(self.pending_orders))
+    self._ebp_import_orders_logs_path.write_text(imported, encoding='utf-8')
+    self._ebp_import_products_logs_path.write_text(imported, encoding='utf-8')
+    self.ebp_orders_returncode = 0
+    self.ebp_products_returncode = 0
+
+
 @fixture
 def offline_connector(request, mocker):
     orders = getattr(request, 'param', SINGLE_ORDER_WITH_TWO_PRODUCTS_BAD_AMOUNT)
@@ -51,6 +65,6 @@ def offline_connector(request, mocker):
     mocker.patch("psebpconnector.webservice.Webservice.test_api_authentication", return_value=True)
     mocker.patch("psebpconnector.webservice.Webservice.set_order_exported")
     mocker.patch("psebpconnector.webservice.Webservice.set_order_refund")
-    mocker.patch("psebpconnector.connector.Connector.import_files")
+    mocker.patch("psebpconnector.connector.Connector.import_files", new=fake_import_files)
     connector = Connector(Path(__file__).parent / 'samples/config/config_file_ok.ini')
     return connector

@@ -44,6 +44,8 @@ from pathlib import Path
 
 class Connector:
     VAT_MAPPING_EXONERATION_ID = -1
+    # Delai max d'un import EBP (s). Sans timeout, un EBP fige bloque le connecteur indefiniment.
+    _EBP_TIMEOUT = 1800
 
     def __init__(self, config_path: Path):
         """
@@ -68,6 +70,9 @@ class Connector:
         self.csv_orders = csv.writer(self._csv_orders_file, delimiter=';', quotechar='"')
         self.exported_products = set()
         self.pending_orders = []
+        # None tant qu'EBP n'a pas rendu la main (timeout, lancement impossible) -> pas de marquage.
+        self.ebp_products_returncode = None
+        self.ebp_orders_returncode = None
         self.webservice = Webservice(self.config.url, self.config.apikey)
         self._ebp_import_products_logs_path = self.config.working_directory / f"ebp_import_products_logs_{self._startup_time}.txt"
         self._ebp_import_orders_logs_path = self.config.working_directory / f"ebp_import_orders_logs_{self._startup_time}.txt"
@@ -223,10 +228,30 @@ class Connector:
         invoice_address = self._get_order_invoice_address(order)
         vat_value, ebp_vat_id = self._get_order_vat(order, territoriality, delivery_address.id_country, vat_applied)
         order_rows = self._get_order_rows(order)
+        # ECRITURE ATOMIQUE : on construit TOUTES les lignes du document en memoire d'abord.
+        # Si une seule ligne echoue (produit 404, 429 epuise, montant illisible...), on sort par
+        # exception SANS avoir rien ecrit : le CSV ne contient jamais un document amputé qu'EBP
+        # importerait comme une facture incomplete (et qui serait recreee a chaque run puisque la
+        # commande ne serait pas dans pending_orders).
+        buffered_products = []
+        buffered_rows = []
+        buffered_product_ids = set()
         for order_row in order_rows:
-            self.export_product(order_row.product_id)
-            self.export_order_row(order, order_row, delivery_address, invoice_address, ebp_vat_id,
-                                  ebp_client_code, ebp_payment_method, territoriality, vat_value)
+            product = self.export_product(order_row.product_id, already_buffered=buffered_product_ids)
+            if product is not None:
+                buffered_products.append(product)
+                buffered_product_ids.add(order_row.product_id)
+            buffered_rows.append(
+                self.export_order_row(order, order_row, delivery_address, invoice_address, ebp_vat_id,
+                                      ebp_client_code, ebp_payment_method, territoriality, vat_value))
+
+        # A partir d'ici plus rien ne peut echouer : on materialise le document complet.
+        for product in buffered_products:
+            self._write_csv_line(product, self.csv_products)
+        self.exported_products.update(buffered_product_ids)
+        for export_order_row in buffered_rows:
+            self._write_csv_line(export_order_row, self.csv_orders)
+
         # Ne PAS marquer exported ici : on attend la confirmation de l'import EBP
         # (cf. mark_exported_orders) pour ne pas perdre une commande rejetee par EBP.
         self.pending_orders.append(order)
@@ -391,7 +416,9 @@ class Connector:
             deposit_amount_currency='',
             deposit_currency_rate='',
             deposit_currency_iso_code='',
-            document_currency_amount=f"{round(float(order.total_products_wt) + float(order.total_shipping), 6):06f}" if float(order.conversion_rate) != 1.0 else '',
+            # Meme garde que document_total : en presence d'une remise, on laisse EBP recalculer le
+            # montant en devise, sinon la facture/l'avoir sort au montant AVANT remise.
+            document_currency_amount='' if float(order.total_discounts) > 0 else (f"{round(float(order.total_products_wt) + float(order.total_shipping), 6):06f}" if float(order.conversion_rate) != 1.0 else ''),
             document_currency_amount_notax='',
             document_currency_amount_shipping_notax=f"{round(float(order.total_shipping) / (1 + vat_rate), 6):06f}" if float(order.conversion_rate) != 1.0 else '',
             line_currency_unit_price_notax=f"{round(float(order_row.product_price), 6):06f}" if float(order.conversion_rate) != 1.0 else '',
@@ -417,30 +444,59 @@ class Connector:
             export_order_row.document_number_suffix += "11"
             export_order_row.document_number += "11"
         self.logger.debug(f"Order {order.id}, export_order_row: {export_order_row}")
-        self._write_csv_line(export_order_row, self.csv_orders)
+        # NE PAS ecrire ici : c'est _process_order qui materialise le document une fois complet
+        # (ecriture atomique, cf. _process_order).
+        return export_order_row
 
-    def export_product(self, product_id: int):
-        if product_id not in self.exported_products:
-            self.logger.info(f"Exporting product {product_id}")
-            product = self.webservice.get_product(product_id)
-            product_name = product.name
-            if isinstance(product_name, list):
-                product_name = product.name[0]['value']
-            export_product = ExportProduct(
-                code=product.ean13,
-                name=product_name,
-                type='BIEN',
-                price=f"{float(product.price):06f}",
-                wholesale_price=f"{float(product.wholesale_price):06f}",
-                ean=product.ean13)
-            self.logger.debug(f"{export_product}")
-            self._write_csv_line(export_product, self.csv_products)
-            self.exported_products.add(product_id)
+    def export_product(self, product_id: int, already_buffered=frozenset()):
+        """ Construit la fiche article a importer, ou None si elle a deja ete emise.
+            L'ecriture (et l'ajout a self.exported_products) est faite par _process_order une fois
+            la commande entierement construite : un echec en cours de commande ne doit pas laisser
+            croire que l'article a ete exporte. """
+        if product_id in self.exported_products or product_id in already_buffered:
+            return None
+        self.logger.info(f"Exporting product {product_id}")
+        product = self.webservice.get_product(product_id)
+        product_name = product.name
+        if isinstance(product_name, list):
+            product_name = product.name[0]['value']
+        export_product = ExportProduct(
+            code=product.ean13,
+            name=product_name,
+            type='BIEN',
+            price=f"{float(product.price):06f}",
+            wholesale_price=f"{float(product.wholesale_price):06f}",
+            ean=product.ean13)
+        self.logger.debug(f"{export_product}")
+        return export_product
+
+    def _iter_orders_to_export(self):
+        """ Enveloppe le generateur du webservice : une exception pendant la pagination interrompt
+            proprement la recuperation (les commandes deja recuperees sont conservees et importees)
+            au lieu de faire remonter l'erreur et d'avorter tout le run. """
+        # iter() : le webservice renvoie un generateur en production, mais les tests peuvent
+        # fournir une simple liste.
+        generator = iter(self.webservice.get_orders_to_export(self.config.order_valid_status,
+                                                              self.config.order_refund_status))
+        while True:
+            try:
+                order = next(generator)
+            except StopIteration:
+                return
+            except Exception as e:
+                self.logger.error(f"Recuperation des commandes interrompue ({e}) : le run continue avec les "
+                                  f"commandes deja recuperees.")
+                return
+            yield order
 
     def export_orders_and_products(self):
         exported_orders_counter = 0
         seen = set()
-        for order in self.webservice.get_orders_to_export(self.config.order_valid_status, self.config.order_refund_status):
+        # Le try/except de la boucle n'attrape PAS une exception levee par le generateur lui-meme
+        # (pagination, get_order...). Sans ce garde, un 404/JSON invalide en cours de pagination
+        # avorterait le run ET empecherait l'import des commandes deja construites.
+        orders = self._iter_orders_to_export()
+        for order in orders:
             key = (order.id, order.is_refund)
             if key in seen:
                 self.logger.warning(f"Order {order.id}: deja traitee dans ce run, ignoree (anti-doublon)")
@@ -487,17 +543,38 @@ class Connector:
 
         self.logger.info('Importing products')
         self.logger.debug(f"Subprocess args: {import_products_command}")
-        subprocess.run(import_products_command)
+        self.ebp_products_returncode = self._run_ebp(import_products_command, 'articles')
 
         self.logger.info('Importing orders')
         self.logger.debug(f"Subprocess args: {import_orders_command}")
-        subprocess.run(import_orders_command)
+        self.ebp_orders_returncode = self._run_ebp(import_orders_command, 'commandes')
+
+    def _run_ebp(self, command, label):
+        """ Lance EBP avec un timeout : sans lui, un EBP fige (boite de dialogue, base occupee)
+            bloque le connecteur indefiniment et les runs horaires s'empilent.
+            Retourne le code retour, ou None si EBP n'a pas rendu la main / n'a pas pu demarrer. """
+        try:
+            result = subprocess.run(command, timeout=self._EBP_TIMEOUT)
+        except subprocess.TimeoutExpired:
+            self.logger.error(f"Import EBP ({label}) : delai de {self._EBP_TIMEOUT}s depasse, processus interrompu. "
+                              f"Aucune commande ne sera marquee exportee (rejeu au prochain run).")
+            return None
+        except OSError as e:
+            self.logger.error(f"Import EBP ({label}) : impossible de lancer EBP - {e}")
+            return None
+        if result.returncode != 0:
+            self.logger.error(f"Import EBP ({label}) : EBP a retourne le code {result.returncode}")
+        return result.returncode
 
     def mark_exported_orders(self):
         """ Marque les commandes comme exportees dans PrestaShop UNIQUEMENT pour les documents
             reellement importes par EBP. Les commandes rejetees par EBP (ou si le log d'import est
             absent/illisible) sont laissees a exported=0 pour etre rejouees au prochain run plutot
             que perdues silencieusement. """
+        if self.ebp_orders_returncode is None:
+            self.logger.error("Import EBP interrompu (delai depasse ou EBP n'a pas pu demarrer) : aucune commande "
+                              "marquee exportee (rejeu au prochain run)")
+            return
         if not self._ebp_import_orders_logs_path.is_file():
             self.logger.error("Log d'import EBP absent : aucune commande marquee exportee (rejeu au prochain run)")
             return
@@ -508,32 +585,43 @@ class Connector:
         # On exige le vrai compteur d'enregistrements EBP.
         has_error_marker = '--erreur--' in log.lower()
         imported = self._parse_ebp_imported_records(log)
-        if imported is None and not has_error_marker:
-            # Pas de compteur ancre mais AUCUNE erreur EBP signalee (log tronque, libelle different
-            # apres montee de version...) : on accepte un ratio brut, sinon un import reussi ne serait
-            # jamais marque et serait re-importe au run suivant => doublons de factures.
-            loose = re.search(r'(\d+)\s*/\s*(\d+)', log)
-            if loose:
-                imported = (int(loose.group(1)), int(loose.group(2)))
         if imported is None:
-            self.logger.error("Log d'import EBP sans compteur d'enregistrements exploitable (base verrouillee, EBP non "
-                              "demarre, log tronque...) : aucune commande marquee exportee (rejeu au prochain run)")
-            return
-        done, total = imported
-        if done == 0:
-            self.logger.error(f"Import EBP totalement en echec ({done}/{total}) : aucune commande marquee exportee "
-                              f"(rejeu au prochain run)")
-            return
+            # Pas de compteur exploitable. On NE retombe PAS sur un r'\d+/\d+' brut : une date
+            # ("26/08/2026") passerait pour un ratio d'import et ferait marquer des commandes non
+            # facturees (regression du 26/08). On se fie au code retour d'EBP, qui est fiable :
+            # 0 = import realise (libelle du log different, log tronque...), sinon echec.
+            if not has_error_marker and self.ebp_orders_returncode == 0:
+                self.logger.warning("Log d'import EBP sans compteur d'enregistrements mais EBP a retourne 0 : "
+                                    "import considere comme reussi (marquage effectue).")
+                imported = None  # pas de compteur : on marque tout ce qui n'est pas explicitement rejete
+            else:
+                self.logger.error("Import EBP non confirme (base verrouillee, EBP non demarre, delai depasse ou code "
+                                  "retour non nul) : aucune commande marquee exportee (rejeu au prochain run)")
+                return
+        else:
+            done, total = imported
+            if done == 0:
+                self.logger.error(f"Import EBP totalement en echec ({done}/{total}) : aucune commande marquee exportee "
+                                  f"(rejeu au prochain run)")
+                return
         rejected = set(re.findall(r'Le document (\d+) ne sera pas import', log))
         for order in self.pending_orders:
             document_number = f"{order.id}11" if order.is_refund else f"{order.id}"
             if document_number in rejected:
                 self.logger.warning(f"Order {order.id}: rejetee par EBP (document {document_number}), "
                                     f"laissee a exported=0 pour rejeu")
-            elif order.is_refund:
-                self.webservice.set_order_refund(order)
-            else:
-                self.webservice.set_order_exported(order)
+                continue
+            # Une erreur HTTP sur UNE commande ne doit pas interrompre le marquage des suivantes :
+            # elles sont deja facturees dans EBP, les laisser a exported=0 les ferait re-importer
+            # au run suivant => doublons de factures.
+            try:
+                if order.is_refund:
+                    self.webservice.set_order_refund(order)
+                else:
+                    self.webservice.set_order_exported(order)
+            except Exception as e:
+                self.logger.error(f"Order {order.id}: FACTUREE dans EBP mais le marquage PrestaShop a echoue ({e}). "
+                                  f"ATTENTION : risque de doublon au prochain run, verifier manuellement.")
 
     def load_payment_method_mapping(self):
         with open(self.config.payment_method_mapping_file_path, 'r') as f:
@@ -582,7 +670,13 @@ class Connector:
             self.check_consistency()
             assert self.webservice.test_api_authentication(), "Unable to login"
             if self.mailer:
-                self.mailer.try_login()
+                # L'alerte mail est un sous-systeme secondaire : son indisponibilite ne doit pas
+                # empecher la facturation. On logge et on continue sans mailer.
+                try:
+                    self.mailer.try_login()
+                except Exception as e:
+                    self.logger.error(f"Connexion O365 impossible, les alertes mail sont desactivees pour ce run - {e}")
+                    self.mailer = None
             self.countries_iso_code = self.webservice.get_countries_iso_code()
             self.logger.debug(f"countries iso codes: {self.countries_iso_code}")
             self.currencies_iso_code = self.webservice.get_currencies_iso_code()

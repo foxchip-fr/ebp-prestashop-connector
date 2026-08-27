@@ -41,6 +41,7 @@ class Webservice:
     _MAX_RETRIES = 6
     _RETRY_STATUS = {429, 500, 502, 503, 504}
     _TIMEOUT = 30
+    _MAX_RETRY_WAIT = 60
 
     def __init__(self, url: str, apikey: str):
         """
@@ -94,6 +95,9 @@ class Webservice:
                     wait = int(retry_after) if retry_after else min(2 ** attempt, 30)
                 except (TypeError, ValueError):
                     wait = min(2 ** attempt, 30)
+                # Plafond : un "Retry-After: 3600" figerait le connecteur une heure entiere et le run
+                # horaire suivant se declencherait par-dessus.
+                wait = min(wait, self._MAX_RETRY_WAIT)
                 time.sleep(wait)
                 continue
 
@@ -198,6 +202,10 @@ class Webservice:
         self._set_order_exported_field(order, 2)
 
     def test_api_authentication(self) -> bool:
-        s = Session()
-        response = s.get(self._build_url(''), auth=self._build_credentials())
-        return response.status_code == 200
+        # Passe par _do_api_call pour beneficier du timeout et du retry : sans cela un simple 429
+        # ou un 502 passager fait echouer l'assert de run() et tue le run avant toute commande.
+        try:
+            self._do_api_call(self._build_url(''))
+        except BadHTTPCode:
+            return False
+        return True
