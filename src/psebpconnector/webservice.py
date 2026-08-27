@@ -202,10 +202,24 @@ class Webservice:
         self._set_order_exported_field(order, 2)
 
     def test_api_authentication(self) -> bool:
-        # Passe par _do_api_call pour beneficier du timeout et du retry : sans cela un simple 429
-        # ou un 502 passager fait echouer l'assert de run() et tue le run avant toute commande.
-        try:
-            self._do_api_call(self._build_url(''))
-        except BadHTTPCode:
+        # ⚠ NE PAS passer par _do_api_call / self._session : la racine /api/ repond 500 quand on
+        # lui envoie les entetes 'Content-Type: application/json' + 'Io-Format: JSON' de la session
+        # (elle ne sert que du XML), alors qu'elle repond 200 avec une requete nue.
+        # On garde donc une session vierge, mais on ajoute le timeout et le retry qui manquaient.
+        session = Session()
+        for attempt in range(self._MAX_RETRIES):
+            try:
+                response = session.get(self._build_url(''), auth=self._build_credentials(),
+                                       timeout=self._TIMEOUT)
+            except requests.exceptions.RequestException:
+                if attempt < self._MAX_RETRIES - 1:
+                    time.sleep(min(2 ** attempt, self._MAX_RETRY_WAIT))
+                    continue
+                return False
+            if response.status_code == 200:
+                return True
+            if response.status_code in self._RETRY_STATUS and attempt < self._MAX_RETRIES - 1:
+                time.sleep(min(2 ** attempt, self._MAX_RETRY_WAIT))
+                continue
             return False
-        return True
+        return False
