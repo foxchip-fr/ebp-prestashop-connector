@@ -25,6 +25,7 @@ SOFTWARE.
 
 import csv
 import logging
+import os
 import re
 import subprocess
 import sys
@@ -46,6 +47,10 @@ class Connector:
     VAT_MAPPING_EXONERATION_ID = -1
     # Delai max d'un import EBP (s). Sans timeout, un EBP fige bloque le connecteur indefiniment.
     _EBP_TIMEOUT = 1800
+    # Deux instances d'EBP qui se chevauchent laissent un verrou exclusif ORPHELIN qui bloque
+    # tous les imports suivants : on attend que la precedente ait rendu la base.
+    _EBP_PROCESS_NAME = 'EBP.Invoicing.Application.exe'
+    _EBP_RELEASE_TIMEOUT = 120
 
     def __init__(self, config_path: Path):
         """
@@ -541,13 +546,44 @@ class Connector:
             '/Import=' + str(self._csv_orders_path) + ';SaleInvoices;' + self.config.ebp_orders_config_name
         ]
 
+        self._wait_for_ebp_release()
         self.logger.info('Importing products')
         self.logger.debug(f"Subprocess args: {import_products_command}")
         self.ebp_products_returncode = self._run_ebp(import_products_command, 'articles')
 
+        # NE PAS enchainer immediatement : EBP peut avoir rendu la main au lanceur alors que
+        # l'application tient encore la base. La 2e instance prendrait alors le verrou exclusif
+        # puis mourrait sans le relacher -> verrou orphelin, tous les imports suivants bloques.
+        self._wait_for_ebp_release()
         self.logger.info('Importing orders')
         self.logger.debug(f"Subprocess args: {import_orders_command}")
         self.ebp_orders_returncode = self._run_ebp(import_orders_command, 'commandes')
+
+    def _wait_for_ebp_release(self):
+        """ Attend qu'aucune instance d'EBP Gestion Commerciale ne tourne encore.
+            Sans cette attente, deux instances se chevauchent occasionnellement : la seconde
+            acquiert le verrou exclusif puis echoue sans le relacher, et TOUS les imports
+            suivants echouent jusqu'a un deverrouillage manuel. """
+        if os.name != 'nt':
+            return
+        deadline = time.time() + self._EBP_RELEASE_TIMEOUT
+        waited = False
+        while time.time() < deadline:
+            try:
+                listing = subprocess.run(['tasklist', '/FI', f'IMAGENAME eq {self._EBP_PROCESS_NAME}'],
+                                         capture_output=True, text=True, timeout=30).stdout or ''
+            except (OSError, subprocess.SubprocessError) as e:
+                self.logger.debug(f"tasklist indisponible ({e}), attente ignoree")
+                return
+            if self._EBP_PROCESS_NAME.lower() not in listing.lower():
+                if waited:
+                    self.logger.info("EBP a rendu la base, poursuite de l'import.")
+                return
+            waited = True
+            self.logger.info("Une instance d'EBP tourne encore : attente avant le prochain import...")
+            time.sleep(2)
+        self.logger.warning(f"EBP tourne toujours apres {self._EBP_RELEASE_TIMEOUT}s : l'import est lance "
+                            f"malgre tout, risque de verrou.")
 
     def _run_ebp(self, command, label):
         """ Lance EBP avec un timeout : sans lui, un EBP fige (boite de dialogue, base occupee)
@@ -601,8 +637,17 @@ class Connector:
                                     "import considere comme reussi (marquage effectue).")
                 imported = None  # pas de compteur : on marque tout ce qui n'est pas explicitement rejete
             else:
-                self.logger.error("Import EBP non confirme (base verrouillee, EBP non demarre, delai depasse ou code "
-                                  "retour non nul) : aucune commande marquee exportee (rejeu au prochain run)")
+                locked = next((l.strip() for l in log.splitlines()
+                               if "mode exclusif" in l.lower()), None)
+                if locked:
+                    self.logger.error(
+                        "BASE EBP VERROUILLEE : " + locked + " | Aucune commande marquee exportee (elles "
+                        "seront importees des le deverrouillage). Si personne n utilise EBP Gestion "
+                        "Commerciale, le verrou est ORPHELIN : ouvrir EBP sur le serveur pour le supprimer, "
+                        "ou supprimer la ligne correspondante de la table EbpSysLock.")
+                else:
+                    self.logger.error("Import EBP non confirme (EBP non demarre, delai depasse ou code retour "
+                                      "non nul) : aucune commande marquee exportee (rejeu au prochain run)")
                 return
         else:
             done, total = imported
